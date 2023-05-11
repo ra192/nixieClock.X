@@ -55,7 +55,6 @@ extern "C" {
 
     void copy_time_fields(Time* src_time, Time* dest_time);
     
-    void add_second(Time* time);
 
 #ifdef	__cplusplus
 }

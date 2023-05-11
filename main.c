@@ -49,6 +49,8 @@
 #define TICKS_IN_SEC 400
 #define DISPLAY_DATE_DURATION 5 * TICKS_IN_SEC
 
+#define SHIFT_FRAME_DURATION TICKS_IN_SEC / 5
+
 typedef enum State {
     DISPLAY_TIME,
     DISPLAY_DATE,
@@ -103,18 +105,39 @@ void handle_display_time(void) {
         set_time_digits(&updated_time);
         state = SET_HH;
     } else if (btn1.state == PRESSED) {
-        set_date_digits(&time);
         date_displayed_ticks = 0;
         state = DISPLAY_DATE;
-    }
+    } else if (timer_count == 0) set_time_digits(&time);
 }
 
 void handle_display_date(void) {
-    date_displayed_ticks++;
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } 
+    } else if (date_displayed_ticks == 0
+            || date_displayed_ticks == DISPLAY_DATE_DURATION - SHIFT_FRAME_DURATION) {
+        set_digits(time.hh % 10, time.mm / 10, time.mm % 10, 0);
+        set_digit_displayed(1, 1, 1, 0);
+    } else if (date_displayed_ticks == SHIFT_FRAME_DURATION
+            || date_displayed_ticks == DISPLAY_DATE_DURATION - 2 * SHIFT_FRAME_DURATION) {
+        set_digits(time.mm / 10, time.mm % 10, 0, 0);
+        set_digit_displayed(1, 1, 0, 0);
+    } else if (date_displayed_ticks == 2 * SHIFT_FRAME_DURATION
+            || date_displayed_ticks == DISPLAY_DATE_DURATION - 3 * SHIFT_FRAME_DURATION) {
+        set_digits(time.mm % 10, 0, 0, time.dd / 10);
+        set_digit_displayed(1, 0, 0, 1);
+    } else if (date_displayed_ticks == 3 * SHIFT_FRAME_DURATION
+            || date_displayed_ticks == DISPLAY_DATE_DURATION - 4 * SHIFT_FRAME_DURATION) {
+        set_digits(0, 0, time.dd / 10, time.dd % 10);
+        set_digit_displayed(0, 0, 1, 1);
+    } else if (date_displayed_ticks == 4 * SHIFT_FRAME_DURATION
+            || date_displayed_ticks == DISPLAY_DATE_DURATION - TICKS_IN_SEC) {
+        set_digits(0, time.dd / 10, time.dd % 10, time.MM / 10);
+        set_digit_displayed(0, 1, 1, 1);
+    } else if (date_displayed_ticks == TICKS_IN_SEC) {
+        set_date_digits(&time);
+    }
+    date_displayed_ticks++;
 }
 
 void handle_set_hour(void) {
@@ -250,14 +273,8 @@ void main(void) {
         if (timer_ticked) {
             refresh_digits();
             read_buttons();
+            if (timer_count == 0) read_time(&time);
             handle_state();
-            if (timer_count == 0) {
-                add_second(&time);
-                if (time.ss == 0) {
-                    read_time(&time);
-                    if (state == DISPLAY_TIME) set_time_digits(&time);
-                }
-            }
             timer_ticked = 0;
         }
     }

@@ -177,11 +177,3 @@ void copy_time_fields(Time* src_time, Time* dest_time) {
 
     dest_time->yy = src_time->yy;
 }
-
-void add_second(Time* time) {
-    if (time->ss < 59)
-        time->ss++;
-    else {
-        time->ss = 0;
-    }
-}
