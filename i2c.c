@@ -6,8 +6,7 @@
  */
 #include "i2c.h"
 #include "mcc_generated_files/pin_manager.h"
-
-#define _XTAL_FREQ 4000000
+#include "mcc_generated_files/device_config.h"
 
 //....................................................................
 // This function generates an I2C Start Condition
