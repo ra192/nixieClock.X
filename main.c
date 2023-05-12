@@ -63,7 +63,7 @@ typedef enum State {
 volatile uint8_t timer_ticked = 0;
 volatile uint16_t timer_count = 0;
 
-
+uint8_t flip_num_arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 Time time;
 Time updated_time;
@@ -99,6 +99,36 @@ void set_date_digits(Time* tm) {
     set_digits(tm->dd / 10, tm->dd % 10, tm->MM / 10, tm->MM % 10);
 }
 
+void flip_time() {
+    if (timer_count < TICKS_IN_SEC && timer_count % 10 == 0) {
+        uint8_t i = (timer_count % 100) / 10;
+        set_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
+    }
+}
+
+void flip_date() {
+    if (date_displayed_ticks % 10 == 0) {
+        uint8_t dig_num = (uint8_t) (date_displayed_ticks / 100);
+        uint8_t i = (date_displayed_ticks % 100) / 10;
+        switch (dig_num) {
+            case 0:
+                set_digits(flip_num_arr[i], time.hh % 10, time.mm / 10, time.mm % 10);
+                break;
+
+            case 1:
+                set_digits(time.dd / 10, flip_num_arr[i], time.mm / 10, time.mm % 10);
+                break;
+
+            case 2:
+                set_digits(time.dd / 10, time.dd % 10, flip_num_arr[i], time.mm % 10);
+                break;
+
+            case 3:
+                set_digits(time.dd / 10, time.dd % 10, time.MM / 10, flip_num_arr[i]);
+        }
+    }
+}
+
 void handle_display_time(void) {
     if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
@@ -107,33 +137,19 @@ void handle_display_time(void) {
     } else if (btn1.state == PRESSED) {
         date_displayed_ticks = 0;
         state = DISPLAY_DATE;
-    } else if (timer_count == 0) set_time_digits(&time);
+    } else if (time.mm % 10 == 0 && time.ss == 30) {
+        flip_time();
+    } else if (timer_count == 0) {
+        set_time_digits(&time);
+    }
 }
 
 void handle_display_date(void) {
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } else if (date_displayed_ticks == 0
-            || date_displayed_ticks == DISPLAY_DATE_DURATION - SHIFT_FRAME_DURATION) {
-        set_digits(time.hh % 10, time.mm / 10, time.mm % 10, 0);
-        set_digit_displayed(1, 1, 1, 0);
-    } else if (date_displayed_ticks == SHIFT_FRAME_DURATION
-            || date_displayed_ticks == DISPLAY_DATE_DURATION - 2 * SHIFT_FRAME_DURATION) {
-        set_digits(time.mm / 10, time.mm % 10, 0, 0);
-        set_digit_displayed(1, 1, 0, 0);
-    } else if (date_displayed_ticks == 2 * SHIFT_FRAME_DURATION
-            || date_displayed_ticks == DISPLAY_DATE_DURATION - 3 * SHIFT_FRAME_DURATION) {
-        set_digits(time.mm % 10, 0, 0, time.dd / 10);
-        set_digit_displayed(1, 0, 0, 1);
-    } else if (date_displayed_ticks == 3 * SHIFT_FRAME_DURATION
-            || date_displayed_ticks == DISPLAY_DATE_DURATION - 4 * SHIFT_FRAME_DURATION) {
-        set_digits(0, 0, time.dd / 10, time.dd % 10);
-        set_digit_displayed(0, 0, 1, 1);
-    } else if (date_displayed_ticks == 4 * SHIFT_FRAME_DURATION
-            || date_displayed_ticks == DISPLAY_DATE_DURATION - TICKS_IN_SEC) {
-        set_digits(0, time.dd / 10, time.dd % 10, time.MM / 10);
-        set_digit_displayed(0, 1, 1, 1);
+    } else if (date_displayed_ticks < TICKS_IN_SEC) {
+        flip_date();
     } else if (date_displayed_ticks == TICKS_IN_SEC) {
         set_date_digits(&time);
     }

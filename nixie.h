@@ -19,7 +19,7 @@ extern "C" {
     void set_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
 
     void set_digit_displayed(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
-    
+
     void set_digit_displayed_all(void);
 
     void refresh_digits(void);
