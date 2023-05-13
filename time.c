@@ -161,6 +161,37 @@ void decrease_month(Time* time) {
         time->MM = 12;
 }
 
+void increase_year(Time* time) {
+    if (time->yy < 99)
+        time->yy++;
+    else
+        time->yy = 0;
+}
+
+void decrease_year(Time* time) {
+    if (time->yy > 0)
+        time->yy--;
+    else
+        time->yy = 99;
+}
+
+void toggle_12_24(Time* time) {
+    if (time->is_12) {
+        if (time->pm && time->hh != 12) time->hh = time->hh + 12;
+        else if (time->hh == 12) time->hh = 0;
+        time->is_12 = 0;
+    } else {
+        if (time->hh < 12) {
+            if (time->hh == 0) time->hh = 12;
+            time->pm = 0;
+        } else {
+            if (time->hh != 12) time->hh = time->hh - 12;
+            time->pm = 1;
+        }
+        time->is_12 = 1;
+    }
+}
+
 void copy_time_fields(Time* src_time, Time* dest_time) {
     dest_time->hh = src_time->hh;
     dest_time->is_12 = src_time->is_12;

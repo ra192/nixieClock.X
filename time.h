@@ -52,6 +52,12 @@ extern "C" {
     void increase_month(Time* time);
 
     void decrease_month(Time* time);
+    
+    void increase_year(Time* time);
+    
+    void decrease_year(Time* time);
+    
+    void toggle_12_24(Time* time);
 
     void copy_time_fields(Time* src_time, Time* dest_time);
     

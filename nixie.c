@@ -22,9 +22,12 @@ void set_digit_displayed(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3)
     digit_displayed[3] = dig3;
 }
 
-void set_digit_displayed_all(void)
-{
+void set_digit_displayed_all(void) {
     set_digit_displayed(1, 1, 1, 1);
+}
+
+void toggle_digit_displayed(uint8_t number) {
+    digit_displayed[number]^= 1;
 }
 
 void on_digit(uint8_t number) {

@@ -57,7 +57,9 @@ typedef enum State {
     SET_HH,
     SET_MM,
     SET_DD,
-    SET_MONTH
+    SET_MONTH,
+    SET_YY,
+    SET_12_24
 } State;
 
 volatile uint8_t timer_ticked = 0;
@@ -97,6 +99,18 @@ void set_time_digits(Time* tm) {
 
 void set_date_digits(Time* tm) {
     set_digits(tm->dd / 10, tm->dd % 10, tm->MM / 10, tm->MM % 10);
+}
+
+void set_year_digits(Time* tm) {
+    set_digits(tm->yy / 10, tm->yy % 10, 0, 0);
+}
+
+void set_12_24_digits(Time* tm) {
+    if (tm->is_12) {
+        set_digits(1, 2, 0, 0);
+    } else {
+        set_digits(2, 4, 0, 0);
+    }
 }
 
 void flip_time() {
@@ -157,21 +171,18 @@ void handle_display_date(void) {
 }
 
 void handle_set_hour(void) {
-    if (btn2.state == PRESSED)
+    if (btn2.state == PRESSED) {
         state = SET_MM;
-    else {
-        if (btn1.state == PRESSED) {
-            decrease_hour(&updated_time);
-            set_time_digits(&updated_time);
-        } else if (btn3.state == PRESSED) {
-            increase_hour(&updated_time);
-            set_time_digits(&updated_time);
-        }
-    }
-    if (timer_count < TICKS_IN_SEC / 2) {
-        set_digit_displayed(0, 0, 1, 1);
-    } else {
         set_digit_displayed_all();
+    } else if (btn1.state == PRESSED) {
+        decrease_hour(&updated_time);
+        set_time_digits(&updated_time);
+    } else if (btn3.state == PRESSED) {
+        increase_hour(&updated_time);
+        set_time_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
     }
 }
 
@@ -179,25 +190,22 @@ void handle_set_minute(void) {
     if (btn2.state == PRESSED) {
         state = SET_DD;
         set_date_digits(&updated_time);
-    } else {
-        if (btn1.state == PRESSED) {
-            decrease_minute(&updated_time);
-            set_time_digits(&updated_time);
-        } else if (btn3.state == PRESSED) {
-            increase_minute(&updated_time);
-            set_time_digits(&updated_time);
-        }
-    }
-    if (timer_count < TICKS_IN_SEC / 2) {
-        set_digit_displayed(1, 1, 0, 0);
-    } else {
-        set_digit_displayed_all();
+    } else if (btn1.state == PRESSED) {
+        decrease_minute(&updated_time);
+        set_time_digits(&updated_time);
+    } else if (btn3.state == PRESSED) {
+        increase_minute(&updated_time);
+        set_time_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(2);
+        toggle_digit_displayed(3);
     }
 }
 
 void handle_set_day(void) {
     if (btn2.state == PRESSED) {
         state = SET_MONTH;
+        set_digit_displayed_all();
     } else {
         if (btn1.state == PRESSED) {
             decrease_date(&updated_time);
@@ -207,32 +215,56 @@ void handle_set_day(void) {
             set_date_digits(&updated_time);
         }
     }
-    if (timer_count < TICKS_IN_SEC / 2) {
-        set_digit_displayed(0, 0, 1, 1);
-    } else {
-        set_digit_displayed_all();
+    if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
     }
 }
 
 void handle_set_month(void) {
     if (btn2.state == PRESSED) {
+        set_year_digits(&updated_time);
+        state = SET_YY;
+    } else if (btn1.state == PRESSED) {
+        decrease_month(&updated_time);
+        set_date_digits(&updated_time);
+    } else if (btn3.state == PRESSED) {
+        increase_month(&updated_time);
+        set_date_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(2);
+        toggle_digit_displayed(3);
+    }
+}
+
+void handle_set_year(void) {
+    if (btn2.state == PRESSED) {
+        set_12_24_digits(&updated_time);
+        state = SET_12_24;
+    } else if (btn1.state == PRESSED) {
+        decrease_year(&updated_time);
+        set_year_digits(&updated_time);
+    } else if (btn3.state == PRESSED) {
+        increase_year(&updated_time);
+        set_year_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
+    }
+}
+
+void handle_set_12_24() {
+    if (btn2.state == PRESSED) {
         update_time(&updated_time);
         copy_time_fields(&updated_time, &time);
         set_time_digits(&time);
         state = DISPLAY_TIME;
-    } else {
-        if (btn1.state == PRESSED) {
-            decrease_month(&updated_time);
-            set_date_digits(&updated_time);
-        } else if (btn3.state == PRESSED) {
-            increase_month(&updated_time);
-            set_date_digits(&updated_time);
-        }
-    }
-    if (timer_count < TICKS_IN_SEC / 2) {
-        set_digit_displayed(1, 1, 0, 0);
-    } else {
-        set_digit_displayed_all();
+    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
+        toggle_12_24(&updated_time);
+        set_12_24_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
     }
 }
 
@@ -255,6 +287,12 @@ void handle_state(void) {
             break;
         case SET_MONTH:
             handle_set_month();
+            break;
+        case SET_YY:
+            handle_set_year();
+            break;
+        case SET_12_24:
+            handle_set_12_24();
     }
 }
 
