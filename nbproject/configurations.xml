@@ -43,6 +43,7 @@
       <itemPath>nixie.c</itemPath>
       <itemPath>button.c</itemPath>
       <itemPath>time.c</itemPath>
+      <itemPath>snippet.txt</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
