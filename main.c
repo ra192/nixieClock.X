@@ -45,6 +45,7 @@
 #include "time.h"
 #include "nixie.h"
 #include "button.h"
+#include "neopixel.h"
 
 #define TICKS_IN_SEC 400
 #define DISPLAY_DATE_DURATION 5 * TICKS_IN_SEC
@@ -143,6 +144,13 @@ void flip_date() {
     }
 }
 
+void set_leds_colour(uint8_t red, uint8_t green, uint8_t blue) {
+    sendRGB(red, green, blue);   
+    sendRGB(red, green, blue);
+    sendRGB(red, green, blue);
+    sendRGB(red, green, blue);
+}
+
 void handle_display_time(void) {
     if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
@@ -154,6 +162,7 @@ void handle_display_time(void) {
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
+        read_time(&time);
         set_time_digits(&time);
     }
 }
@@ -332,12 +341,11 @@ void main(void) {
 
     read_time(&time);
     set_time_digits(&time);
-
+    set_leds_colour(128,128,0);
     while (1) {
         if (timer_ticked) {
             refresh_digits();
             read_buttons();
-            if (timer_count == 0) read_time(&time);
             handle_state();
             timer_ticked = 0;
         }

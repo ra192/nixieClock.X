@@ -14,11 +14,13 @@
         <itemPath>mcc_generated_files/epwm1.h</itemPath>
         <itemPath>mcc_generated_files/tmr1.h</itemPath>
         <itemPath>mcc_generated_files/interrupt_manager.h</itemPath>
+        <itemPath>mcc_generated_files/memory.h</itemPath>
       </logicalFolder>
       <itemPath>i2c.h</itemPath>
       <itemPath>nixie.h</itemPath>
       <itemPath>button.h</itemPath>
       <itemPath>time.h</itemPath>
+      <itemPath>neopixel.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -37,6 +39,7 @@
         <itemPath>mcc_generated_files/epwm1.c</itemPath>
         <itemPath>mcc_generated_files/tmr1.c</itemPath>
         <itemPath>mcc_generated_files/interrupt_manager.c</itemPath>
+        <itemPath>mcc_generated_files/memory.c</itemPath>
       </logicalFolder>
       <itemPath>main.c</itemPath>
       <itemPath>i2c.c</itemPath>
@@ -44,6 +47,7 @@
       <itemPath>button.c</itemPath>
       <itemPath>time.c</itemPath>
       <itemPath>snippet.txt</itemPath>
+      <itemPath>neopixel.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"

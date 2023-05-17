@@ -236,6 +236,17 @@
 #define RC2_SetDigitalInput()    do { TRISCbits.TRISC2 = 1; } while(0)
 #define RC2_SetDigitalOutput()   do { TRISCbits.TRISC2 = 0; } while(0)
 
+// get/set LED aliases
+#define LED_TRIS                 TRISCbits.TRISC3
+#define LED_LAT                  LATCbits.LATC3
+#define LED_PORT                 PORTCbits.RC3
+#define LED_SetHigh()            do { LATCbits.LATC3 = 1; } while(0)
+#define LED_SetLow()             do { LATCbits.LATC3 = 0; } while(0)
+#define LED_Toggle()             do { LATCbits.LATC3 = ~LATCbits.LATC3; } while(0)
+#define LED_GetValue()           PORTCbits.RC3
+#define LED_SetDigitalInput()    do { TRISCbits.TRISC3 = 1; } while(0)
+#define LED_SetDigitalOutput()   do { TRISCbits.TRISC3 = 0; } while(0)
+
 // get/set SDA aliases
 #define SDA_TRIS                 TRISCbits.TRISC4
 #define SDA_LAT                  LATCbits.LATC4
