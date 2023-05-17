@@ -52,6 +52,8 @@
 
 #define SHIFT_FRAME_DURATION TICKS_IN_SEC / 5
 
+#define DATAEE_LED_MODE_ADDR 0x10
+
 typedef enum State {
     DISPLAY_TIME,
     DISPLAY_DATE,
@@ -64,6 +66,7 @@ typedef enum State {
 } State;
 
 typedef enum LedMode {
+    OFF,
     RED,
     GREEN,
     BLUE
@@ -161,6 +164,9 @@ void set_leds_colour(uint8_t red, uint8_t green, uint8_t blue) {
 
 void set_led_mode(void) {
     switch (led_mode) {
+        case OFF:
+            set_leds_colour(0, 0, 0);
+            break;
         case RED:
             set_leds_colour(64, 0, 0);
             break;
@@ -169,11 +175,18 @@ void set_led_mode(void) {
             break;
         case BLUE:
             set_leds_colour(0, 0, 64);
+            break;
+        default:
+            set_leds_colour(0, 0, 0);
+            led_mode = OFF;
     }
 }
 
 void change_led_mode(void) {
     switch (led_mode) {
+        case OFF:
+            led_mode = RED;
+            break;
         case RED:
             led_mode = GREEN;
             break;
@@ -181,9 +194,10 @@ void change_led_mode(void) {
             led_mode = BLUE;
             break;
         case BLUE:
-            led_mode = RED;
+            led_mode = OFF;
     }
     set_led_mode();
+    DATAEE_WriteByte(DATAEE_LED_MODE_ADDR, led_mode);
 }
 
 void handle_display_time(void) {
@@ -379,7 +393,7 @@ void main(void) {
     read_time(&time);
     set_time_digits(&time);
 
-    led_mode = RED;
+    led_mode = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
     set_led_mode();
 
     while (1) {
