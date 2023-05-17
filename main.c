@@ -63,6 +63,12 @@ typedef enum State {
     SET_12_24
 } State;
 
+typedef enum LedMode {
+    RED,
+    GREEN,
+    BLUE
+} LedMode;
+
 volatile uint8_t timer_ticked = 0;
 volatile uint16_t timer_count = 0;
 
@@ -78,6 +84,8 @@ Button btn3;
 State state = DISPLAY_TIME;
 
 uint16_t date_displayed_ticks;
+
+LedMode led_mode;
 
 void tmr1_ISR(void) {
     timer_ticked = 1;
@@ -145,10 +153,37 @@ void flip_date() {
 }
 
 void set_leds_colour(uint8_t red, uint8_t green, uint8_t blue) {
-    sendRGB(red, green, blue);   
     sendRGB(red, green, blue);
     sendRGB(red, green, blue);
     sendRGB(red, green, blue);
+    sendRGB(red, green, blue);
+}
+
+void set_led_mode(void) {
+    switch (led_mode) {
+        case RED:
+            set_leds_colour(64, 0, 0);
+            break;
+        case GREEN:
+            set_leds_colour(0, 64, 0);
+            break;
+        case BLUE:
+            set_leds_colour(0, 0, 64);
+    }
+}
+
+void change_led_mode(void) {
+    switch (led_mode) {
+        case RED:
+            led_mode = GREEN;
+            break;
+        case GREEN:
+            led_mode = BLUE;
+            break;
+        case BLUE:
+            led_mode = RED;
+    }
+    set_led_mode();
 }
 
 void handle_display_time(void) {
@@ -159,6 +194,8 @@ void handle_display_time(void) {
     } else if (btn1.state == PRESSED) {
         date_displayed_ticks = 0;
         state = DISPLAY_DATE;
+    } else if (btn3.state == PRESSED) {
+        change_led_mode();
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
@@ -341,7 +378,10 @@ void main(void) {
 
     read_time(&time);
     set_time_digits(&time);
-    set_leds_colour(128,128,0);
+
+    led_mode = RED;
+    set_led_mode();
+
     while (1) {
         if (timer_ticked) {
             refresh_digits();
