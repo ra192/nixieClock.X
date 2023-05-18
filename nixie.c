@@ -1,5 +1,10 @@
 #include "nixie.h"
 
+const uint8_t decoder_arr[] = {
+    0b00000000, 0b00000010, 0b00000101, 0b00000111, 0b00000011,
+    0b00001001, 0b00000110, 0b00001000, 0b00000100, 0b00000001
+};
+
 uint8_t digit_values[DIGITS_SIZE];
 uint8_t digit_displayed[DIGITS_SIZE];
 
@@ -27,97 +32,23 @@ void set_digit_displayed_all(void) {
 }
 
 void toggle_digit_displayed(uint8_t number) {
-    digit_displayed[number]^= 1;
+    digit_displayed[number] ^= 1;
 }
 
 void on_digit(uint8_t number) {
-    switch (digit_values[number]) {
-        case 0:
-            DEC_A0_SetLow();
-            DEC_A1_SetLow();
-            DEC_A2_SetLow();
-            DEC_A3_SetLow();
-            break;
-        case 1:
-            DEC_A0_SetLow();
-            DEC_A1_SetHigh();
-            DEC_A2_SetLow();
-            DEC_A3_SetLow();
-            break;
-        case 2:
-            DEC_A0_SetHigh();
-            DEC_A1_SetLow();
-            DEC_A2_SetHigh();
-            DEC_A3_SetLow();
-            break;
-        case 3:
-            DEC_A0_SetHigh();
-            DEC_A1_SetHigh();
-            DEC_A2_SetHigh();
-            DEC_A3_SetLow();
-            break;
-        case 4:
-            DEC_A0_SetHigh();
-            DEC_A1_SetHigh();
-            DEC_A2_SetLow();
-            DEC_A3_SetLow();
-            break;
-        case 5:
-            DEC_A0_SetHigh();
-            DEC_A1_SetLow();
-            DEC_A2_SetLow();
-            DEC_A3_SetHigh();
-            break;
-        case 6:
-            DEC_A0_SetLow();
-            DEC_A1_SetHigh();
-            DEC_A2_SetHigh();
-            DEC_A3_SetLow();
-            break;
-        case 7:
-            DEC_A0_SetLow();
-            DEC_A1_SetLow();
-            DEC_A2_SetLow();
-            DEC_A3_SetHigh();
-            break;
-        case 8:
-            DEC_A0_SetLow();
-            DEC_A1_SetLow();
-            DEC_A2_SetHigh();
-            DEC_A3_SetLow();
-            break;
-        case 9:
-            DEC_A0_SetHigh();
-            DEC_A1_SetLow();
-            DEC_A2_SetLow();
-            DEC_A3_SetLow();
-    }
+    uint8_t dec_pin_vals = decoder_arr[digit_values[number]];
 
-    switch (number) {
-        case 0:
-            L1_SetHigh();
-            L2_SetLow();
-            L3_SetLow();
-            L4_SetLow();
-            break;
-        case 1:
-            L1_SetLow();
-            L2_SetHigh();
-            L3_SetLow();
-            L4_SetLow();
-            break;
-        case 2:
-            L1_SetLow();
-            L2_SetLow();
-            L3_SetHigh();
-            L4_SetLow();
-            break;
-        case 3:
-            L1_SetLow();
-            L2_SetLow();
-            L3_SetLow();
-            L4_SetHigh();
-    }
+    DEC_A0_LAT = dec_pin_vals & 0x01;
+    DEC_A1_LAT = dec_pin_vals >> 1 & 0x01;
+    DEC_A2_LAT = dec_pin_vals >> 2 & 0x01;
+    DEC_A3_LAT = dec_pin_vals >> 3 & 0x01;
+
+    int l_pin_vals = 1 << number;
+
+    L1_LAT = l_pin_vals & 0x01;
+    L2_LAT = l_pin_vals >> 1 & 0x01;
+    L3_LAT = l_pin_vals >> 2 & 0x01;
+    L4_LAT = l_pin_vals >> 2 & 0x01;
 }
 
 void off_digits(void) {

@@ -423,7 +423,7 @@ void main(void) {
 
     read_time(&time);
     read_alarm(&alarm);
-    
+
     set_time_digits(&time);
 
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
@@ -434,7 +434,7 @@ void main(void) {
             refresh_digits();
             read_buttons();
             handle_state();
-            if (timer_count == 0)read_time(&time);
+            if (timer_count == 0) read_time(&time);
             if (led_state == LED_RAINBOW) change_rainbow_colour();
             timer_ticked = 0;
         }
