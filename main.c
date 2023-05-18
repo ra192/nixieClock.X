@@ -50,9 +50,9 @@
 #define TICKS_IN_SEC 400
 #define DISPLAY_DATE_DURATION 5 * TICKS_IN_SEC
 
-#define SHIFT_FRAME_DURATION TICKS_IN_SEC / 5
-
 #define DATAEE_LED_MODE_ADDR 0x10
+
+#define LED_RAINBOW_FREQ TICKS_IN_SEC / 100
 
 typedef enum State {
     DISPLAY_TIME,
@@ -65,12 +65,18 @@ typedef enum State {
     SET_12_24
 } State;
 
-typedef enum LedMode {
-    OFF,
-    RED,
-    GREEN,
-    BLUE
-} LedMode;
+typedef enum LedState {
+    LED_OFF,
+    LED_RED,
+    LED_GREEN,
+    LED_BLUE,
+    LED_RAINBOW
+} LedState;
+
+Colour OFF_COLOUR = {0, 0, 0};
+Colour RED = {64, 0, 0};
+Colour GREEN = {0, 64, 0};
+Colour BLUE = {0, 0, 64};
 
 volatile uint8_t timer_ticked = 0;
 volatile uint16_t timer_count = 0;
@@ -88,7 +94,14 @@ State state = DISPLAY_TIME;
 
 uint16_t date_displayed_ticks;
 
-LedMode led_mode;
+LedState led_state;
+
+uint16_t hue;
+uint8_t val;
+int8_t dir;
+Colour rainbow_colour;
+
+void change_rainbow_colour(void);
 
 void tmr1_ISR(void) {
     timer_ticked = 1;
@@ -126,7 +139,7 @@ void set_12_24_digits(Time* tm) {
 }
 
 void flip_time() {
-    if (timer_count < TICKS_IN_SEC && timer_count % 10 == 0) {
+    if (timer_count % 10 == 0) {
         uint8_t i = (timer_count % 100) / 10;
         set_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
     }
@@ -155,49 +168,66 @@ void flip_date() {
     }
 }
 
-void set_leds_colour(uint8_t red, uint8_t green, uint8_t blue) {
-    sendRGB(red, green, blue);
-    sendRGB(red, green, blue);
-    sendRGB(red, green, blue);
-    sendRGB(red, green, blue);
-}
-
-void set_led_mode(void) {
-    switch (led_mode) {
-        case OFF:
-            set_leds_colour(0, 0, 0);
+void set_led_state(void) {
+    switch (led_state) {
+        case LED_OFF:
+            set_leds_colour(&OFF_COLOUR);
             break;
-        case RED:
-            set_leds_colour(64, 0, 0);
+        case LED_RED:
+            set_leds_colour(&RED);
             break;
-        case GREEN:
-            set_leds_colour(0, 64, 0);
+        case LED_GREEN:
+            set_leds_colour(&GREEN);
             break;
-        case BLUE:
-            set_leds_colour(0, 0, 64);
+        case LED_BLUE:
+            set_leds_colour(&BLUE);
+            break;
+        case LED_RAINBOW:
+            hue = HSV_HUE_MIN;
+            val = HSV_VAL_MAX;
+            change_rainbow_colour();
             break;
         default:
-            set_leds_colour(0, 0, 0);
-            led_mode = OFF;
+            set_leds_colour(&OFF_COLOUR);
+            led_state = LED_OFF;
     }
 }
 
-void change_led_mode(void) {
-    switch (led_mode) {
-        case OFF:
-            led_mode = RED;
+void change_led_state(void) {
+    switch (led_state) {
+        case LED_OFF:
+            led_state = LED_RED;
             break;
-        case RED:
-            led_mode = GREEN;
+        case LED_RED:
+            led_state = LED_GREEN;
             break;
-        case GREEN:
-            led_mode = BLUE;
+        case LED_GREEN:
+            led_state = LED_BLUE;
             break;
-        case BLUE:
-            led_mode = OFF;
+        case LED_BLUE:
+            led_state = LED_RAINBOW;
+            break;
+        case LED_RAINBOW:
+            led_state = LED_OFF;
     }
-    set_led_mode();
-    DATAEE_WriteByte(DATAEE_LED_MODE_ADDR, led_mode);
+    set_led_state();
+    DATAEE_WriteByte(DATAEE_LED_MODE_ADDR, led_state);
+}
+
+void change_rainbow_colour(void) {
+    if (timer_count % LED_RAINBOW_FREQ == 0) {
+        hue++; // Increase hue to circle and wrap
+        if (hue > HSV_HUE_MAX)
+            hue -= HSV_HUE_MAX;
+
+        val += dir; // Vary value between 1/4 and 4/4 of HSV_VAL_MAX
+        if (val < HSV_VAL_MAX / 4 || val == HSV_VAL_MAX)
+            dir = -dir; // Reverse value direction
+
+        // Perform conversion at fully saturated color
+        fast_hsv2rgb_8bit(hue, HSV_SAT_MAX, val, &rainbow_colour.red, &rainbow_colour.green, &rainbow_colour.blue);
+        set_leds_colour(&rainbow_colour);
+    }
 }
 
 void handle_display_time(void) {
@@ -209,11 +239,10 @@ void handle_display_time(void) {
         date_displayed_ticks = 0;
         state = DISPLAY_DATE;
     } else if (btn3.state == PRESSED) {
-        change_led_mode();
+        change_led_state();
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
-        read_time(&time);
         set_time_digits(&time);
     }
 }
@@ -393,14 +422,16 @@ void main(void) {
     read_time(&time);
     set_time_digits(&time);
 
-    led_mode = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
-    set_led_mode();
+    led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
+    set_led_state();
 
     while (1) {
         if (timer_ticked) {
             refresh_digits();
             read_buttons();
             handle_state();
+            if (timer_count == 0)read_time(&time);
+            if (led_state == LED_RAINBOW) change_rainbow_colour();
             timer_ticked = 0;
         }
     }
