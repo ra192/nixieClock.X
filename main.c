@@ -86,6 +86,8 @@ uint8_t flip_num_arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 Time time;
 Time updated_time;
 
+Alarm alarm;
+
 Button btn1;
 Button btn2;
 Button btn3;
@@ -420,6 +422,8 @@ void main(void) {
     //INTERRUPT_PeripheralInterruptDisable();
 
     read_time(&time);
+    read_alarm(&alarm);
+    
     set_time_digits(&time);
 
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);

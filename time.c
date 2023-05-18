@@ -1,27 +1,29 @@
 #include "time.h"
 #include "i2c.h"
 
-#define DS3231_WRITE_ADDRESS 0xD0
-#define DS3231_READ_ADDRESS 0xD1
+#define DS3231_ADDRESS 0xD0
 
 extern void i2c_start();
 
-void read_time(Time* time) {
+void read_bytes(uint8_t start_address, uint8_t* reg_arr, uint8_t length) {
     i2c_start();
-    i2c_wr(DS3231_WRITE_ADDRESS);
-    i2c_wr(0x00);
+    i2c_wr(DS3231_ADDRESS);
+    i2c_wr(start_address);
 
     i2c_start();
-    i2c_wr(DS3231_READ_ADDRESS);
+    i2c_wr(DS3231_ADDRESS | 0x01);
 
-    uint8_t reg_arr[7];
-
-    i2c_rd_bytes(reg_arr, 7);
+    i2c_rd_bytes(reg_arr, length);
 
     i2c_stop();
+}
+
+void read_time(Time* time) {
+    uint8_t reg_arr[7];
+
+    read_bytes(0x00, reg_arr, 7);
 
     time->ss = (reg_arr[0] >> 4)*10 + (reg_arr[0] & 0x0F);
-
     time->mm = (reg_arr[1] >> 4)*10 + (reg_arr[1] & 0x0F);
 
     time->is_12 = reg_arr[2] >> 6;
@@ -34,12 +36,20 @@ void read_time(Time* time) {
     }
 
     time->day = reg_arr[3];
-
     time->dd = (reg_arr[4] >> 4)*10 + (reg_arr[4] & 0x0F);
-
     time->MM = (reg_arr[5] >> 4)*10 + (reg_arr[5] & 0x0F);
-
     time->yy = (reg_arr[6] >> 4)*10 + (reg_arr[6] & 0x0F);
+}
+
+void read_alarm(Alarm* alarm) {
+    uint8_t reg_arr[4];
+    read_bytes(0x07, reg_arr, 4);
+
+    alarm->ss = (reg_arr[0] >> 4 & 0x07)*10 + (reg_arr[0] & 0x0F);
+    alarm->mm = (reg_arr[1] >> 4 & 0x07)*10 + (reg_arr[1] & 0x0F);
+    alarm->hh = (reg_arr[2] >> 4 & 0x03)*10 + (reg_arr[2] & 0x0F);
+    alarm->dy_dt = reg_arr[3] >> 6 & 0x01;
+    alarm->dd = (reg_arr[3] >> 4 & 0x03)*10 + (reg_arr[3] & 0x0F);
 }
 
 void update_time(Time* time) {
@@ -60,7 +70,7 @@ void update_time(Time* time) {
     reg_arr[6] = (uint8_t) (time->yy / 10 << 4 | (time->yy % 10));
 
     i2c_start();
-    i2c_wr(DS3231_WRITE_ADDRESS);
+    i2c_wr(DS3231_ADDRESS);
     i2c_wr(0x00);
     i2c_wr_bytes(reg_arr, 7);
     i2c_stop();
