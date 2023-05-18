@@ -48,7 +48,7 @@ void on_digit(uint8_t number) {
     L1_LAT = l_pin_vals & 0x01;
     L2_LAT = l_pin_vals >> 1 & 0x01;
     L3_LAT = l_pin_vals >> 2 & 0x01;
-    L4_LAT = l_pin_vals >> 2 & 0x01;
+    L4_LAT = l_pin_vals >> 3 & 0x01;
 }
 
 void off_digits(void) {
