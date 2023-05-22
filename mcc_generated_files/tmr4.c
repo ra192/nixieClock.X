@@ -1,26 +1,24 @@
 /**
-  Generated Pin Manager File
+  TMR4 Generated Driver File
 
-  Company:
+  @Company
     Microchip Technology Inc.
 
-  File Name:
-    pin_manager.c
+  @File Name
+    tmr4.c
 
-  Summary:
-    This is the Pin Manager file generated using PIC10 / PIC12 / PIC16 / PIC18 MCUs
+  @Summary
+    This is the generated driver implementation file for the TMR4 driver using PIC10 / PIC12 / PIC16 / PIC18 MCUs
 
-  Description:
-    This header file provides implementations for pin APIs for all pins selected in the GUI.
+  @Description
+    This source file provides APIs for TMR4.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.81.8
         Device            :  PIC16F1936
-        Driver Version    :  2.11
+        Driver Version    :  2.01
     The generated drivers are tested against the following:
         Compiler          :  XC8 2.36 and above
-        MPLAB             :  MPLAB X 6.00
-
-    Copyright (c) 2013 - 2015 released Microchip Technology Inc.  All rights reserved.
+        MPLAB 	          :  MPLAB X 6.00
 */
 
 /*
@@ -46,60 +44,81 @@
     SOFTWARE.
 */
 
-#include "pin_manager.h"
+/**
+  Section: Included Files
+*/
 
-
-
-
-
-void PIN_MANAGER_Initialize(void)
-{
-    /**
-    LATx registers
-    */
-    LATE = 0x00;
-    LATA = 0x00;
-    LATB = 0x00;
-    LATC = 0x00;
-
-    /**
-    TRISx registers
-    */
-    TRISE = 0x08;
-    TRISA = 0x3C;
-    TRISB = 0xE0;
-    TRISC = 0xC3;
-
-    /**
-    ANSELx registers
-    */
-    ANSELB = 0x1F;
-    ANSELA = 0x3F;
-
-    /**
-    WPUx registers
-    */
-    WPUE = 0x00;
-    WPUB = 0xE0;
-    OPTION_REGbits.nWPUEN = 0;
-
-
-    /**
-    APFCONx registers
-    */
-    APFCON = 0x00;
-
-
-
-
-   
-    
-}
-  
-void PIN_MANAGER_IOC(void)
-{   
-}
+#include <xc.h>
+#include "tmr4.h"
 
 /**
- End of File
+  Section: Global Variables Definitions
+*/
+
+/**
+  Section: TMR4 APIs
+*/
+
+void TMR4_Initialize(void)
+{
+    // Set TMR4 to the options selected in the User Interface
+
+    // PR4 249; 
+    PR4 = 0xF9;
+
+    // TMR4 0; 
+    TMR4 = 0x00;
+
+    // Clearing IF flag.
+    PIR3bits.TMR4IF = 0;
+
+    // T4CKPS 1:16; T4OUTPS 1:1; TMR4ON on; 
+    T4CON = 0x06;
+}
+
+void TMR4_StartTimer(void)
+{
+    // Start the Timer by writing to TMRxON bit
+    T4CONbits.TMR4ON = 1;
+}
+
+void TMR4_StopTimer(void)
+{
+    // Stop the Timer by writing to TMRxON bit
+    T4CONbits.TMR4ON = 0;
+}
+
+uint8_t TMR4_ReadTimer(void)
+{
+    uint8_t readVal;
+
+    readVal = TMR4;
+
+    return readVal;
+}
+
+void TMR4_WriteTimer(uint8_t timerVal)
+{
+    // Write to the Timer4 register
+    TMR4 = timerVal;
+}
+
+void TMR4_LoadPeriodRegister(uint8_t periodVal)
+{
+   PR4 = periodVal;
+}
+
+bool TMR4_HasOverflowOccured(void)
+{
+    // check if  overflow has occurred by checking the TMRIF bit
+    bool status = PIR3bits.TMR4IF;
+    if(status)
+    {
+        // Clearing IF flag.
+        PIR3bits.TMR4IF = 0;
+    }
+    return status;
+}
+/**
+  End of File
 */

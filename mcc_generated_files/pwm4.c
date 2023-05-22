@@ -1,24 +1,24 @@
 /**
-  @Generated PIC10 / PIC12 / PIC16 / PIC18 MCUs Source File
+  PWM4 Generated Driver File
 
-  @Company:
+  @Company
     Microchip Technology Inc.
 
-  @File Name:
-    mcc.c
+  @File Name
+    pwm4.c
 
-  @Summary:
-    This is the mcc.c file generated using PIC10 / PIC12 / PIC16 / PIC18 MCUs
+  @Summary
+    This is the generated driver implementation file for the PWM4 driver using PIC10 / PIC12 / PIC16 / PIC18 MCUs
 
-  @Description:
-    This header file provides implementations for driver APIs for all modules selected in the GUI.
+  @Description
+    This source file provides implementations for driver APIs for PWM4.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.81.8
         Device            :  PIC16F1936
-        Driver Version    :  2.00
+        Driver Version    :  2.01
     The generated drivers are tested against the following:
-        Compiler          :  XC8 2.36 and above or later
-        MPLAB             :  MPLAB X 6.00
+        Compiler          :  XC8 2.36 and above
+         MPLAB 	          :  MPLAB X 6.00
 */
 
 /*
@@ -44,42 +44,51 @@
     SOFTWARE.
 */
 
-#include "mcc.h"
+/**
+  Section: Included Files
+*/
 
+#include <xc.h>
+#include "pwm4.h"
 
-void SYSTEM_Initialize(void)
+/**
+  Section: Macro Declarations
+*/
+
+#define PWM4_INITIALIZE_DUTY_VALUE    499
+
+/**
+  Section: PWM Module APIs
+*/
+
+void PWM4_Initialize(void)
 {
+    // Set the PWM4 to the options selected in the User Interface
+	
+	// CCP4M PWM; DC4B 3; 
+	CCP4CON = 0x3C;    
+	
+	// CCPR4L 124; 
+	CCPR4L = 0x7C;    
+	
+	// CCPR4H 0; 
+	CCPR4H = 0x00;    
 
-    PIN_MANAGER_Initialize();
-    OSCILLATOR_Initialize();
-    WDT_Initialize();
-    EPWM1_Initialize();
-    TMR4_Initialize();
-    PWM4_Initialize();
-    TMR2_Initialize();
-    TMR1_Initialize();
+	// Selecting Timer 4
+	CCPTMRS0bits.C4TSEL = 0x1;
+    
 }
 
-void OSCILLATOR_Initialize(void)
+void PWM4_LoadDutyValue(uint16_t dutyValue)
 {
-    // SCS FOSC; SPLLEN disabled; IRCF 8MHz_HF; 
-    OSCCON = 0x70;
-    // TUN 0; 
-    OSCTUNE = 0x00;
-    // SBOREN disabled; 
-    BORCON = 0x00;
-    // Wait for PLL to stabilize
-    while(PLLR == 0)
-    {
-}
-}
-
-void WDT_Initialize(void)
-{
-    // WDTPS 1:65536; SWDTEN OFF; 
-    WDTCON = 0x16;
+   // Writing to 8 MSBs of pwm duty cycle in CCPRL register
+    CCPR4L = ((dutyValue & 0x03FC)>>2);
+    
+   // Writing to 2 LSBs of pwm duty cycle in CCPCON register
+    CCP4CON = ((uint8_t)(CCP4CON & 0xCF) | ((dutyValue & 0x0003)<<4));
 }
 
 /**
  End of File
 */
+

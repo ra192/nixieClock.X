@@ -48,15 +48,18 @@
 #include "neopixel.h"
 
 #define TICKS_IN_SEC 400
+
 #define DISPLAY_DATE_DURATION 5 * TICKS_IN_SEC
+#define DISPLAY_TEMP_DURATION 5 * TICKS_IN_SEC
 
 #define DATAEE_LED_MODE_ADDR 0x10
 
-#define LED_RAINBOW_FREQ TICKS_IN_SEC / 100
+#define LED_RAINBOW_PERIOD TICKS_IN_SEC / 100
 
 typedef enum State {
     DISPLAY_TIME,
     DISPLAY_DATE,
+    DISPLAY_TEMP,
     SET_HH,
     SET_MM,
     SET_DD,
@@ -88,6 +91,8 @@ Time updated_time;
 
 Alarm alarm;
 
+Temp temp;
+
 Button btn1;
 Button btn2;
 Button btn3;
@@ -95,6 +100,7 @@ Button btn3;
 State state = DISPLAY_TIME;
 
 uint16_t date_displayed_ticks;
+uint16_t temp_displayed_ticks;
 
 LedState led_state;
 
@@ -126,6 +132,10 @@ void set_time_digits(Time* tm) {
 
 void set_date_digits(Time* tm) {
     set_digits(tm->dd / 10, tm->dd % 10, tm->MM / 10, tm->MM % 10);
+}
+
+void set_temp_digits(Temp* temp) {
+    set_digits(temp->int_part / 10, temp->int_part % 10, temp->fract_part / 10, temp->fract_part % 10);
 }
 
 void set_year_digits(Time* tm) {
@@ -217,7 +227,7 @@ void change_led_state(void) {
 }
 
 void change_rainbow_colour(void) {
-    if (timer_count % LED_RAINBOW_FREQ == 0) {
+    if (timer_count % LED_RAINBOW_PERIOD == 0) {
         hue++; // Increase hue to circle and wrap
         if (hue > HSV_HUE_MAX)
             hue -= HSV_HUE_MAX;
@@ -233,15 +243,20 @@ void change_rainbow_colour(void) {
 }
 
 void handle_display_time(void) {
-    if (btn2.state == LONG_PRESSED) {
+    if (btn1.state == PRESSED) {
+        date_displayed_ticks = 0;
+        state = DISPLAY_DATE;
+    } else if (btn2.state == PRESSED) {
+        change_led_state();
+    } else if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
         set_time_digits(&updated_time);
         state = SET_HH;
-    } else if (btn1.state == PRESSED) {
-        date_displayed_ticks = 0;
-        state = DISPLAY_DATE;
     } else if (btn3.state == PRESSED) {
-        change_led_state();
+        read_temp(&temp);
+        set_temp_digits(&temp);
+        temp_displayed_ticks = 0;
+        state = DISPLAY_TEMP;
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
@@ -259,6 +274,14 @@ void handle_display_date(void) {
         set_date_digits(&time);
     }
     date_displayed_ticks++;
+}
+
+void handle_display_temp(void) {
+    if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
+        state = DISPLAY_TIME;
+        set_time_digits(&time);
+    }
+    temp_displayed_ticks++;
 }
 
 void handle_set_hour(void) {
@@ -376,6 +399,9 @@ void handle_state(void) {
             break;
         case DISPLAY_DATE:
             handle_display_date();
+            break;
+        case DISPLAY_TEMP:
+            handle_display_temp();
             break;
         case SET_HH:
             handle_set_hour();

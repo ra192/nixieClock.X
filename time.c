@@ -52,6 +52,14 @@ void read_alarm(Alarm* alarm) {
     alarm->dd = (reg_arr[3] >> 4 & 0x03)*10 + (reg_arr[3] & 0x0F);
 }
 
+void read_temp(Temp* temp) {
+    uint8_t reg_arr[2];
+    read_bytes(0x11, reg_arr, 2);
+    
+    temp->int_part = reg_arr[0];
+    temp->fract_part = reg_arr[1] * 25;
+}
+
 void update_time(Time* time) {
     uint8_t reg_arr[7];
 

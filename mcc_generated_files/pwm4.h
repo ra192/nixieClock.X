@@ -1,26 +1,24 @@
 /**
-  Generated Pin Manager File
+  PWM4 Generated Driver File
 
-  Company:
+  @Company
     Microchip Technology Inc.
 
-  File Name:
-    pin_manager.c
+  @File Name
+    pwm4.h
 
-  Summary:
-    This is the Pin Manager file generated using PIC10 / PIC12 / PIC16 / PIC18 MCUs
+  @Summary
+    This is the generated driver implementation file for the PWM4 driver using PIC10 / PIC12 / PIC16 / PIC18 MCUs
 
-  Description:
-    This header file provides implementations for pin APIs for all pins selected in the GUI.
+  @Description
+    This header file provides implementations for driver APIs for PWM4.
     Generation Information :
         Product Revision  :  PIC10 / PIC12 / PIC16 / PIC18 MCUs - 1.81.8
         Device            :  PIC16F1936
-        Driver Version    :  2.11
+        Driver Version    :  2.01
     The generated drivers are tested against the following:
         Compiler          :  XC8 2.36 and above
         MPLAB             :  MPLAB X 6.00
-
-    Copyright (c) 2013 - 2015 released Microchip Technology Inc.  All rights reserved.
 */
 
 /*
@@ -46,60 +44,93 @@
     SOFTWARE.
 */
 
-#include "pin_manager.h"
+#ifndef PWM4_H
+#define PWM4_H
 
+/**
+  Section: Included Files
+*/
 
+#include <xc.h>
+#include <stdint.h>
+#include <stdbool.h>
 
+#ifdef __cplusplus  // Provide C++ Compatibility
 
+    extern "C" {
 
-void PIN_MANAGER_Initialize(void)
-{
-    /**
-    LATx registers
-    */
-    LATE = 0x00;
-    LATA = 0x00;
-    LATB = 0x00;
-    LATC = 0x00;
+#endif
 
-    /**
-    TRISx registers
-    */
-    TRISE = 0x08;
-    TRISA = 0x3C;
-    TRISB = 0xE0;
-    TRISC = 0xC3;
+/**
+  Section: PWM Module APIs
+*/
 
-    /**
-    ANSELx registers
-    */
-    ANSELB = 0x1F;
-    ANSELA = 0x3F;
+/**
+  @Summary
+    Initializes the PWM4
 
-    /**
-    WPUx registers
-    */
-    WPUE = 0x00;
-    WPUB = 0xE0;
-    OPTION_REGbits.nWPUEN = 0;
+  @Description
+    This routine initializes the PWM4 module.
+    This routine must be called before any other PWM4 routine is called.
+    This routine should only be called once during system initialization.
 
+  @Preconditions
+    None
 
-    /**
-    APFCONx registers
-    */
-    APFCON = 0x00;
+  @Param
+    None
 
+  @Returns
+    None
 
-
-
-   
+  @Comment
     
-}
-  
-void PIN_MANAGER_IOC(void)
-{   
-}
 
+ @Example
+    <code>
+    uint16_t dutycycle;
+
+    CCP4_Initialize();
+	PWM4_LoadDutyValue(dutycycle);
+    </code>
+ */
+void PWM4_Initialize(void);
+
+/**
+  @Summary
+    Loads 16-bit duty cycle.
+
+  @Description
+    This routine loads the 16 bit duty cycle value.
+
+  @Preconditions
+    PWM4_Initialize() function should have been called
+    before calling this function.
+
+  @Param
+    Pass 16bit duty cycle value.
+
+  @Returns
+    None
+
+  @Example
+    <code>
+    uint16_t dutycycle;
+
+    PWM4_Initialize();
+    PWM4_LoadDutyValue(dutycycle);
+    </code>
+*/
+void PWM4_LoadDutyValue(uint16_t dutyValue);
+
+        
+#ifdef __cplusplus  // Provide C++ Compatibility
+
+    }
+
+#endif
+
+#endif	//PWM4_H
 /**
  End of File
 */

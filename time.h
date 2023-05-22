@@ -55,10 +55,17 @@ extern "C" {
 
         uint8_t dd;
     } Alarm;
-
+    
+    typedef struct Temp {
+        uint8_t int_part;
+        uint8_t fract_part;
+    } Temp;
+    
     void read_time(Time* time);
     
     void read_alarm(Alarm* alarm);
+    
+    void read_temp(Temp* temp);
 
     void update_time(Time* time);
 
