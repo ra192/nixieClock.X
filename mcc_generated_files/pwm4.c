@@ -55,7 +55,7 @@
   Section: Macro Declarations
 */
 
-#define PWM4_INITIALIZE_DUTY_VALUE    499
+#define PWM4_INITIALIZE_DUTY_VALUE    0
 
 /**
   Section: PWM Module APIs
@@ -65,11 +65,11 @@ void PWM4_Initialize(void)
 {
     // Set the PWM4 to the options selected in the User Interface
 	
-	// CCP4M PWM; DC4B 3; 
-	CCP4CON = 0x3C;    
+	// CCP4M PWM; DC4B 0; 
+	CCP4CON = 0x0C;    
 	
-	// CCPR4L 124; 
-	CCPR4L = 0x7C;    
+	// CCPR4L 0; 
+	CCPR4L = 0x00;    
 	
 	// CCPR4H 0; 
 	CCPR4H = 0x00;    

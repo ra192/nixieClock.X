@@ -93,6 +93,62 @@
 #define L2_SetAnalogMode()      do { ANSELAbits.ANSA1 = 1; } while(0)
 #define L2_SetDigitalMode()     do { ANSELAbits.ANSA1 = 0; } while(0)
 
+// get/set CAT_0 aliases
+#define CAT_0_TRIS                 TRISAbits.TRISA2
+#define CAT_0_LAT                  LATAbits.LATA2
+#define CAT_0_PORT                 PORTAbits.RA2
+#define CAT_0_ANS                  ANSELAbits.ANSA2
+#define CAT_0_SetHigh()            do { LATAbits.LATA2 = 1; } while(0)
+#define CAT_0_SetLow()             do { LATAbits.LATA2 = 0; } while(0)
+#define CAT_0_Toggle()             do { LATAbits.LATA2 = ~LATAbits.LATA2; } while(0)
+#define CAT_0_GetValue()           PORTAbits.RA2
+#define CAT_0_SetDigitalInput()    do { TRISAbits.TRISA2 = 1; } while(0)
+#define CAT_0_SetDigitalOutput()   do { TRISAbits.TRISA2 = 0; } while(0)
+#define CAT_0_SetAnalogMode()      do { ANSELAbits.ANSA2 = 1; } while(0)
+#define CAT_0_SetDigitalMode()     do { ANSELAbits.ANSA2 = 0; } while(0)
+
+// get/set CAT_1 aliases
+#define CAT_1_TRIS                 TRISAbits.TRISA3
+#define CAT_1_LAT                  LATAbits.LATA3
+#define CAT_1_PORT                 PORTAbits.RA3
+#define CAT_1_ANS                  ANSELAbits.ANSA3
+#define CAT_1_SetHigh()            do { LATAbits.LATA3 = 1; } while(0)
+#define CAT_1_SetLow()             do { LATAbits.LATA3 = 0; } while(0)
+#define CAT_1_Toggle()             do { LATAbits.LATA3 = ~LATAbits.LATA3; } while(0)
+#define CAT_1_GetValue()           PORTAbits.RA3
+#define CAT_1_SetDigitalInput()    do { TRISAbits.TRISA3 = 1; } while(0)
+#define CAT_1_SetDigitalOutput()   do { TRISAbits.TRISA3 = 0; } while(0)
+#define CAT_1_SetAnalogMode()      do { ANSELAbits.ANSA3 = 1; } while(0)
+#define CAT_1_SetDigitalMode()     do { ANSELAbits.ANSA3 = 0; } while(0)
+
+// get/set CAT_2 aliases
+#define CAT_2_TRIS                 TRISAbits.TRISA4
+#define CAT_2_LAT                  LATAbits.LATA4
+#define CAT_2_PORT                 PORTAbits.RA4
+#define CAT_2_ANS                  ANSELAbits.ANSA4
+#define CAT_2_SetHigh()            do { LATAbits.LATA4 = 1; } while(0)
+#define CAT_2_SetLow()             do { LATAbits.LATA4 = 0; } while(0)
+#define CAT_2_Toggle()             do { LATAbits.LATA4 = ~LATAbits.LATA4; } while(0)
+#define CAT_2_GetValue()           PORTAbits.RA4
+#define CAT_2_SetDigitalInput()    do { TRISAbits.TRISA4 = 1; } while(0)
+#define CAT_2_SetDigitalOutput()   do { TRISAbits.TRISA4 = 0; } while(0)
+#define CAT_2_SetAnalogMode()      do { ANSELAbits.ANSA4 = 1; } while(0)
+#define CAT_2_SetDigitalMode()     do { ANSELAbits.ANSA4 = 0; } while(0)
+
+// get/set CAT aliases
+#define CAT_TRIS                 TRISAbits.TRISA5
+#define CAT_LAT                  LATAbits.LATA5
+#define CAT_PORT                 PORTAbits.RA5
+#define CAT_ANS                  ANSELAbits.ANSA5
+#define CAT_SetHigh()            do { LATAbits.LATA5 = 1; } while(0)
+#define CAT_SetLow()             do { LATAbits.LATA5 = 0; } while(0)
+#define CAT_Toggle()             do { LATAbits.LATA5 = ~LATAbits.LATA5; } while(0)
+#define CAT_GetValue()           PORTAbits.RA5
+#define CAT_SetDigitalInput()    do { TRISAbits.TRISA5 = 1; } while(0)
+#define CAT_SetDigitalOutput()   do { TRISAbits.TRISA5 = 0; } while(0)
+#define CAT_SetAnalogMode()      do { ANSELAbits.ANSA5 = 1; } while(0)
+#define CAT_SetDigitalMode()     do { ANSELAbits.ANSA5 = 0; } while(0)
+
 // get/set L4 aliases
 #define L4_TRIS                 TRISAbits.TRISA6
 #define L4_LAT                  LATAbits.LATA6

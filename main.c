@@ -46,6 +46,7 @@
 #include "nixie.h"
 #include "button.h"
 #include "neopixel.h"
+#include "dekatron.h"
 
 #define TICKS_IN_SEC 400
 
@@ -241,6 +242,8 @@ void change_rainbow_colour(void) {
         set_leds_colour(&rainbow_colour);
     }
 }
+
+
 
 void handle_display_time(void) {
     if (btn1.state == PRESSED) {
@@ -455,12 +458,17 @@ void main(void) {
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
     set_led_state();
 
+    dek_set_zero();
+    
     while (1) {
         if (timer_ticked) {
             refresh_digits();
             read_buttons();
             handle_state();
-            if (timer_count == 0) read_time(&time);
+            if (timer_count == 0) {
+                read_time(&time);
+                dek_move_next();
+            }
             if (led_state == LED_RAINBOW) change_rainbow_colour();
             timer_ticked = 0;
         }
