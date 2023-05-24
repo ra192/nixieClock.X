@@ -17,6 +17,8 @@ extern "C" {
     void dek_set_zero(void);
 
     void dek_move_next(void);
+    
+    uint8_t dek_get_cat_num(void);
 
 #ifdef	__cplusplus
 }

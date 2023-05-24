@@ -243,7 +243,21 @@ void change_rainbow_colour(void) {
     }
 }
 
+void buzzer_on(void) {
+    PWM4_LoadDutyValue(500);
+}
 
+void buzzer_off(void) {
+    PWM4_LoadDutyValue(0);
+}
+
+void refresh_dek(void) {
+    if (time.ss == 0 && timer_count == 0) {
+        dek_set_zero();
+    } else if (time.ss / 2 != dek_get_cat_num()) {
+        dek_move_next();
+    }
+}
 
 void handle_display_time(void) {
     if (btn1.state == PRESSED) {
@@ -260,6 +274,7 @@ void handle_display_time(void) {
         set_temp_digits(&temp);
         temp_displayed_ticks = 0;
         state = DISPLAY_TEMP;
+        buzzer_on();
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
@@ -283,6 +298,7 @@ void handle_display_temp(void) {
     if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
+        buzzer_off();
     }
     temp_displayed_ticks++;
 }
@@ -459,15 +475,15 @@ void main(void) {
     set_led_state();
 
     dek_set_zero();
-    
+
     while (1) {
         if (timer_ticked) {
             refresh_digits();
+            refresh_dek();
             read_buttons();
             handle_state();
             if (timer_count == 0) {
                 read_time(&time);
-                dek_move_next();
             }
             if (led_state == LED_RAINBOW) change_rainbow_colour();
             timer_ticked = 0;
