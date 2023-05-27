@@ -63,8 +63,8 @@ void TMR2_Initialize(void)
 {
     // Set TMR2 to the options selected in the User Interface
 
-    // PR2 149; 
-    PR2 = 0x95;
+    // PR2 74; 
+    PR2 = 0x4A;
 
     // TMR2 0; 
     TMR2 = 0x00;

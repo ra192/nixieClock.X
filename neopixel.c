@@ -1,7 +1,55 @@
 #include "neopixel.h"
 #include "mcc_generated_files/pin_manager.h"
 
-#define send(b) LED_LAT=1; NOP(); LED_LAT=b; NOP(); NOP(); LED_LAT=0; NOP(); NOP(); //3 4 4
+#define send(b) LED_LAT=1; LED_LAT=b; NOP(); LED_LAT=0; NOP(); //3 4 4
+
+const uint8_t lights[360] = {
+    0, 0, 0, 0, 0, 1, 1, 2,
+    2, 3, 4, 5, 6, 7, 8, 9,
+    11, 12, 13, 15, 17, 18, 20, 22,
+    24, 26, 28, 30, 32, 35, 37, 39,
+    42, 44, 47, 49, 52, 55, 58, 60,
+    63, 66, 69, 72, 75, 78, 81, 85,
+    88, 91, 94, 97, 101, 104, 107, 111,
+    114, 117, 121, 124, 127, 131, 134, 137,
+    141, 144, 147, 150, 154, 157, 160, 163,
+    167, 170, 173, 176, 179, 182, 185, 188,
+    191, 194, 197, 200, 202, 205, 208, 210,
+    213, 215, 217, 220, 222, 224, 226, 229,
+    231, 232, 234, 236, 238, 239, 241, 242,
+    244, 245, 246, 248, 249, 250, 251, 251,
+    252, 253, 253, 254, 254, 255, 255, 255,
+    255, 255, 255, 255, 254, 254, 253, 253,
+    252, 251, 251, 250, 249, 248, 246, 245,
+    244, 242, 241, 239, 238, 236, 234, 232,
+    231, 229, 226, 224, 222, 220, 217, 215,
+    213, 210, 208, 205, 202, 200, 197, 194,
+    191, 188, 185, 182, 179, 176, 173, 170,
+    167, 163, 160, 157, 154, 150, 147, 144,
+    141, 137, 134, 131, 127, 124, 121, 117,
+    114, 111, 107, 104, 101, 97, 94, 91,
+    88, 85, 81, 78, 75, 72, 69, 66,
+    63, 60, 58, 55, 52, 49, 47, 44,
+    42, 39, 37, 35, 32, 30, 28, 26,
+    24, 22, 20, 18, 17, 15, 13, 12,
+    11, 9, 8, 7, 6, 5, 4, 3,
+    2, 2, 1, 1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0
+};
 
 // send out a byte b in WS2812 protocol
 
@@ -64,67 +112,8 @@ void set_leds_colour(Colour* colour) {
     sendRGB(colour);
 }
 
-// https://www.vagrearg.org/content/hsvrgb
-
-void fast_hsv2rgb_8bit(uint16_t h, uint8_t s, uint8_t v, uint8_t *r, uint8_t *g, uint8_t *b) {
-    HSV_MONOCHROMATIC_TEST(s, v, r, g, b); // Exit with grayscale if s == 0
-
-    uint8_t sextant = h >> 8;
-
-    HSV_SEXTANT_TEST(sextant); // Optional: Limit hue sextants to defined space
-
-    HSV_POINTER_SWAP(sextant, r, g, b); // Swap pointers depending which sextant we are in
-
-    *g = v; // Top level
-
-    // Perform actual calculations
-    uint8_t bb;
-    uint16_t ww;
-
-    /*
-     * Bottom level: v * (1.0 - s)
-     * --> (v * (255 - s) + error_corr) / 256
-     */
-    bb = ~s;
-    ww = v * bb;
-    ww += 1; // Error correction
-    ww += ww >> 8; // Error correction
-    *b = ww >> 8;
-
-    uint8_t h_fraction = h & 0xff; // 0...255
-
-    if (!(sextant & 1)) {
-        // *r = ...slope_up...;
-        /*
-         * Slope up: v * (1.0 - s * (1.0 - h))
-         * --> (v * (255 - (s * (256 - h) + error_corr1) / 256) + error_corr2) / 256
-         */
-        ww = !h_fraction ? ((uint16_t) s << 8) : (s * (uint8_t) (-h_fraction));
-        ww += ww >> 8; // Error correction 1
-        bb = ww >> 8;
-        bb = ~bb;
-        ww = v * bb;
-        ww += v >> 1; // Error correction 2
-        *r = ww >> 8;
-    } else {
-        // *r = ...slope_down...;
-        /*
-         * Slope down: v * (1.0 - s * h)
-         * --> (v * (255 - (s * h + error_corr1) / 256) + error_corr2) / 256
-         */
-        ww = s * h_fraction;
-        ww += ww >> 8; // Error correction 1
-        bb = ww >> 8;
-        bb = ~bb;
-        ww = v * bb;
-        ww += v >> 1; // Error correction 2
-        *r = ww >> 8;
-
-        /*
-         * A perfect match for h_fraction == 0 implies:
-         *	*r = (ww >> 8) + (h_fraction ? 0 : 1)
-         * However, this is an extra calculation that may not be required.
-         */
-    }
+// sine wave rainbow. See https://www.instructables.com/How-to-Make-Proper-Rainbow-and-Random-Colors-With-/
+void set_leds_colour_by_angle(int angle) { 
+  Colour colour = {lights[(angle+120)%360], lights[angle], lights[(angle+240)%360]};   
+  set_leds_colour(&colour);
 }
-

@@ -47,15 +47,16 @@
 #include "button.h"
 #include "neopixel.h"
 #include "dekatron.h"
+#include "buzzer.h"
 
-#define TICKS_IN_SEC 400
+#define TICKS_FREQ 400
 
-#define DISPLAY_DATE_DURATION 5 * TICKS_IN_SEC
-#define DISPLAY_TEMP_DURATION 5 * TICKS_IN_SEC
+#define DISPLAY_DATE_DURATION 5 * TICKS_FREQ
+#define DISPLAY_TEMP_DURATION 5 * TICKS_FREQ
 
 #define DATAEE_LED_MODE_ADDR 0x10
 
-#define LED_RAINBOW_PERIOD TICKS_IN_SEC / 100
+#define LED_RAINBOW_PERIOD TICKS_FREQ / 50
 
 typedef enum State {
     DISPLAY_TIME,
@@ -66,7 +67,7 @@ typedef enum State {
     SET_DD,
     SET_MONTH,
     SET_YY,
-    SET_12_24
+    SET_12_24       
 } State;
 
 typedef enum LedState {
@@ -105,16 +106,13 @@ uint16_t temp_displayed_ticks;
 
 LedState led_state;
 
-uint16_t hue;
-uint8_t val;
-int8_t dir;
-Colour rainbow_colour;
+uint8_t rainbow_angle;
 
 void change_rainbow_colour(void);
 
 void tmr1_ISR(void) {
     timer_ticked = 1;
-    if (timer_count == TICKS_IN_SEC - 1) {
+    if (timer_count == TICKS_FREQ - 1) {
         timer_count = 0;
     } else {
         timer_count++;
@@ -196,9 +194,8 @@ void set_led_state(void) {
             set_leds_colour(&BLUE);
             break;
         case LED_RAINBOW:
-            hue = HSV_HUE_MIN;
-            val = HSV_VAL_MAX;
-            change_rainbow_colour();
+            rainbow_angle = 0;
+            set_leds_colour_by_angle(rainbow_angle);
             break;
         default:
             set_leds_colour(&OFF_COLOUR);
@@ -229,26 +226,9 @@ void change_led_state(void) {
 
 void change_rainbow_colour(void) {
     if (timer_count % LED_RAINBOW_PERIOD == 0) {
-        hue++; // Increase hue to circle and wrap
-        if (hue > HSV_HUE_MAX)
-            hue -= HSV_HUE_MAX;
-
-        val += dir; // Vary value between 1/4 and 4/4 of HSV_VAL_MAX
-        if (val < HSV_VAL_MAX / 4 || val == HSV_VAL_MAX)
-            dir = -dir; // Reverse value direction
-
-        // Perform conversion at fully saturated color
-        fast_hsv2rgb_8bit(hue, HSV_SAT_MAX, val, &rainbow_colour.red, &rainbow_colour.green, &rainbow_colour.blue);
-        set_leds_colour(&rainbow_colour);
+        rainbow_angle = (rainbow_angle + 1) % 360;
+        set_leds_colour_by_angle(rainbow_angle);
     }
-}
-
-void buzzer_on(void) {
-    PWM4_LoadDutyValue(500);
-}
-
-void buzzer_off(void) {
-    PWM4_LoadDutyValue(0);
 }
 
 void refresh_dek(void) {
@@ -274,7 +254,7 @@ void handle_display_time(void) {
         set_temp_digits(&temp);
         temp_displayed_ticks = 0;
         state = DISPLAY_TEMP;
-        buzzer_on();
+        start_melody();
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
@@ -286,9 +266,9 @@ void handle_display_date(void) {
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } else if (date_displayed_ticks < TICKS_IN_SEC) {
+    } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
-    } else if (date_displayed_ticks == TICKS_IN_SEC) {
+    } else if (date_displayed_ticks == TICKS_FREQ) {
         set_date_digits(&time);
     }
     date_displayed_ticks++;
@@ -298,7 +278,6 @@ void handle_display_temp(void) {
     if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-        buzzer_off();
     }
     temp_displayed_ticks++;
 }
@@ -315,7 +294,7 @@ void handle_set_hour(void) {
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_hour(&updated_time);
         set_time_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -333,7 +312,7 @@ void handle_set_minute(void) {
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_minute(&updated_time);
         set_time_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -354,7 +333,7 @@ void handle_set_day(void) {
             set_date_digits(&updated_time);
         }
     }
-    if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -372,7 +351,7 @@ void handle_set_month(void) {
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_month(&updated_time);
         set_date_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -390,7 +369,7 @@ void handle_set_year(void) {
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_year(&updated_time);
         set_year_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -405,7 +384,7 @@ void handle_set_12_24() {
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
         toggle_12_24(&updated_time);
         set_12_24_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_IN_SEC / 2) {
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -486,6 +465,7 @@ void main(void) {
                 read_time(&time);
             }
             if (led_state == LED_RAINBOW) change_rainbow_colour();
+            refresh_buzzer();
             timer_ticked = 0;
         }
     }

@@ -31,17 +31,6 @@ extern "C" {
         uint8_t MM;
 
         uint8_t yy;
-
-        uint8_t al1_hh;
-
-        uint8_t al1_mm;
-
-        uint8_t al1_ss;
-
-        uint8_t al1_dy_dt;
-
-        uint8_t al1_dd;
-
     } Time;
 
     typedef struct Alarm {
