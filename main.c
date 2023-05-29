@@ -67,7 +67,10 @@ typedef enum State {
     SET_DD,
     SET_MONTH,
     SET_YY,
-    SET_12_24       
+    SET_12_24,
+    SET_ALARM_HH,
+    SET_ALARM_MM,
+    SET_ALARM_ON_OFF
 } State;
 
 typedef enum LedState {
@@ -147,6 +150,14 @@ void set_12_24_digits(Time* tm) {
     } else {
         set_digits(2, 4, 0, 0);
     }
+}
+
+void set_alarm_digits(Alarm* alarm) {
+    set_digits(alarm->hh / 10, alarm->hh % 10, alarm->mm / 10, alarm->mm % 10);
+}
+
+void set_alarm_on_off_digits(Alarm* alarm) {
+    set_digits(0, alarm->on, 0, 0);
 }
 
 void flip_time() {
@@ -254,7 +265,6 @@ void handle_display_time(void) {
         set_temp_digits(&temp);
         temp_displayed_ticks = 0;
         state = DISPLAY_TEMP;
-        start_melody();
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
@@ -278,8 +288,12 @@ void handle_display_temp(void) {
     if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
+    } else if (btn3.state == LONG_PRESSED) {
+        state = SET_ALARM_HH;
+        set_alarm_digits(&alarm);
+    } else {
+        temp_displayed_ticks++;
     }
-    temp_displayed_ticks++;
 }
 
 void handle_set_hour(void) {
@@ -288,11 +302,11 @@ void handle_set_hour(void) {
         set_digit_displayed_all();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_hour(&updated_time);
+        decrease_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
         set_time_digits(&updated_time);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_hour(&updated_time);
+        increase_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
         set_time_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
@@ -306,11 +320,11 @@ void handle_set_minute(void) {
         set_date_digits(&updated_time);
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_minute(&updated_time);
+        decrease_minute(&updated_time.mm);
         set_time_digits(&updated_time);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_minute(&updated_time);
+        increase_minute(&updated_time.mm);
         set_time_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(2);
@@ -325,11 +339,11 @@ void handle_set_day(void) {
     } else {
         if (btn1.state == PRESSED
                 || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            decrease_date(&updated_time);
+            decrease_date(&updated_time.dd, updated_time.MM);
             set_date_digits(&updated_time);
         } else if (btn3.state == PRESSED
                 || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            increase_date(&updated_time);
+            increase_date(&updated_time.dd, updated_time.dd);
             set_date_digits(&updated_time);
         }
     }
@@ -345,11 +359,11 @@ void handle_set_month(void) {
         state = SET_YY;
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_month(&updated_time);
+        decrease_month(&updated_time.MM);
         set_date_digits(&updated_time);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_month(&updated_time);
+        increase_month(&updated_time.MM);
         set_date_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(2);
@@ -363,11 +377,11 @@ void handle_set_year(void) {
         state = SET_12_24;
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_year(&updated_time);
+        decrease_year(&updated_time.yy);
         set_year_digits(&updated_time);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_year(&updated_time);
+        increase_year(&updated_time.yy);
         set_year_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
@@ -378,15 +392,76 @@ void handle_set_year(void) {
 void handle_set_12_24() {
     if (btn2.state == PRESSED) {
         update_time(&updated_time);
+        update_alarm(&alarm, updated_time.is_12);
         copy_time_fields(&updated_time, &time);
         set_time_digits(&time);
         state = DISPLAY_TIME;
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
-        toggle_12_24(&updated_time);
+
+        toggle_12_24(&updated_time.hh, &updated_time.pm, &alarm.hh, &alarm.pm, &updated_time.is_12);
         set_12_24_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
+    }
+}
+
+void handle_set_alarm_hour(void) {
+        if (btn2.state == PRESSED) {
+            state = SET_ALARM_MM;
+            set_digit_displayed_all();
+        } else if (btn1.state == PRESSED
+                || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            decrease_hour(&alarm.hh, &alarm.pm, time.is_12);
+            set_alarm_digits(&alarm);
+        } else if (btn3.state == PRESSED
+                || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            increase_hour(&alarm.hh, &alarm.pm, time.is_12);
+            set_alarm_digits(&alarm);
+        } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+            toggle_digit_displayed(0);
+            toggle_digit_displayed(1);
+        }
+}
+
+void handle_set_alarm_minute(void) {
+    if (btn2.state == PRESSED) {
+        state = SET_ALARM_ON_OFF;
+        set_alarm_on_off_digits(&alarm);
+    } else if (btn1.state == PRESSED
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        decrease_minute(&alarm.mm);
+        set_alarm_digits(&alarm);
+    } else if (btn3.state == PRESSED
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        increase_minute(&alarm.mm);
+        set_alarm_digits(&alarm);
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(2);
+        toggle_digit_displayed(3);
+    }
+}
+
+void handle_set_alarm_on_off(void) {
+    if (btn2.state == PRESSED) {
+        update_alarm(&alarm, time.is_12);
+        state = DISPLAY_TIME;
+        set_time_digits(&time);
+    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
+        toggle_alarm_on_off(&alarm.on);
+        set_alarm_on_off_digits(&alarm);
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
+    }
+}
+
+void handle_alarm(void) {
+    if (alarm.on && time.hh == alarm.hh && time.mm == alarm.mm && (time.is_12 == 0 || time.pm == alarm.pm)) {
+        if (time.ss == alarm.ss && timer_count == 0)
+            start_melody();
+        else
+            refresh_buzzer();
     }
 }
 
@@ -418,6 +493,15 @@ void handle_state(void) {
             break;
         case SET_12_24:
             handle_set_12_24();
+            break;
+        case SET_ALARM_HH:
+            handle_set_alarm_hour();
+            break;
+        case SET_ALARM_MM:
+            handle_set_alarm_minute();
+            break;
+        case SET_ALARM_ON_OFF:
+            handle_set_alarm_on_off();
     }
 }
 
@@ -465,7 +549,7 @@ void main(void) {
                 read_time(&time);
             }
             if (led_state == LED_RAINBOW) change_rainbow_colour();
-            refresh_buzzer();
+            handle_alarm();
             timer_ticked = 0;
         }
     }

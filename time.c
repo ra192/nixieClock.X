@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "time.h"
 #include "i2c.h"
 
@@ -50,6 +52,7 @@ void read_alarm(Alarm* alarm) {
     alarm->hh = (reg_arr[2] >> 4 & 0x03)*10 + (reg_arr[2] & 0x0F);
     alarm->dy_dt = reg_arr[3] >> 6 & 0x01;
     alarm->dd = (reg_arr[3] >> 4 & 0x03)*10 + (reg_arr[3] & 0x0F);
+    alarm->on = reg_arr[3] >> 7;
 }
 
 void read_temp(Temp* temp) {
@@ -84,130 +87,161 @@ void update_time(Time* time) {
     i2c_stop();
 }
 
-void increase_hour(Time* time) {
-    if (time->is_12) {
-        if (time->hh < 12)
-            time->hh++;
+void update_alarm(Alarm* alarm, uint8_t is_12) {
+    uint8_t reg_arr[4];
+
+    reg_arr[0] = (uint8_t) (alarm->ss / 10 << 4 | (alarm->ss % 10));
+    reg_arr[1] = (uint8_t) (alarm->mm / 10 << 4 | (alarm->mm % 10));
+
+    if (is_12) {
+        reg_arr[2] = (uint8_t) (1 << 6 | alarm->pm << 5 | alarm->hh / 10 << 4 | (alarm->hh % 10));
+    } else {
+        reg_arr[2] = (uint8_t) (alarm->hh / 10 << 4 | (alarm->hh % 10));
+    }
+
+    reg_arr[3] = (uint8_t) (alarm->on << 7 | alarm->dd / 10 <<4 | alarm->dd % 10);
+
+            i2c_start();
+    i2c_wr(DS3231_ADDRESS);
+    i2c_wr(0x07);
+    i2c_wr_bytes(reg_arr, 4);
+    i2c_stop();
+}
+
+void increase_hour(uint8_t* hh, uint8_t *pm, uint8_t is_12) {
+    if (is_12) {
+        if (*hh < 12)
+            (*hh)++;
         else {
-            time->hh = 1;
-            time->pm = (time->pm) ? 0 : 1;
+            *hh = 1;
+            *pm = (*pm) ? 0 : 1;
         }
     } else {
-        time->hh = (time->hh + 1) % 24;
+        *hh = (*hh + 1) % 24;
     }
 }
 
-void decrease_hour(Time* time) {
-    if (time->is_12) {
-        if (time->hh > 1)
-            time->hh--;
+void decrease_hour(uint8_t* hh, uint8_t *pm, uint8_t is_12) {
+    if (is_12) {
+        if (*hh > 1)
+            (*hh)--;
         else {
-            time->hh = 1;
-            time->pm = (time->pm) ? 0 : 1;
+            *hh = 1;
+            *pm = (*pm) ? 0 : 1;
         }
     } else {
-        if (time->hh > 0)
-            time->hh--;
+        if (*hh > 0)
+            (*hh)--;
         else {
-            time->hh = 23;
+            *hh = 23;
         }
     }
 }
 
-void increase_minute(Time* time) {
-    time->mm = (time->mm + 1) % 60;
+void increase_minute(uint8_t* mm) {
+    *mm = (*mm + 1) % 60;
 }
 
-void decrease_minute(Time* time) {
-    if (time->mm > 0)
-        time->mm--;
+void decrease_minute(uint8_t* mm) {
+    if (*mm > 0)
+        (*mm)--;
     else
-        time->mm = 59;
+        *mm = 59;
 }
 
-void increase_date(Time* time) {
-    if (time->MM == 2) {
-        if (time->dd < 28)
-            time->dd++;
+void increase_date(uint8_t* dd, uint8_t MM) {
+    if (MM == 2) {
+        if (*dd < 28)
+            (*dd)++;
         else
-            time->dd = 1;
-    } else if (time->MM == 1 || time->MM == 3 || time->MM == 5 || time->MM == 7
-            || time->MM == 8 || time->MM == 10 || time->MM == 12) {
-        if (time->dd < 31)
-            time->dd++;
+            *dd = 1;
+    } else if (MM == 1 || MM == 3 || MM == 5 || MM == 7 || MM == 8 || MM == 10
+            || MM == 12) {
+        if (*dd < 31)
+            (*dd)++;
         else
-            time->dd = 1;
+            *dd = 1;
     } else {
-        if (time->dd < 30)
-            time->dd++;
+        if (*dd < 30)
+            (*dd)++;
         else
-            time->dd = 1;
+            *dd = 1;
     }
 }
 
-void decrease_date(Time* time) {
-    if (time->MM == 2) {
-        if (time->dd > 1)
-            time->dd--;
+void decrease_date(uint8_t* dd, uint8_t MM) {
+    if (MM == 2) {
+        if (*dd > 1)
+            (*dd)--;
         else
-            time->dd = 28;
-    } else if (time->MM == 1 || time->MM == 3 || time->MM == 5 || time->MM == 7
-            || time->MM == 8 || time->MM == 10 || time->MM == 12) {
-        if (time->dd > 1)
-            time->dd--;
+            *dd = 28;
+    } else if (MM == 1 || MM == 3 || MM == 5 || MM == 7 || MM == 8 || MM == 10 || MM == 12) {
+        if (*dd > 1)
+            (*dd)--;
         else
-            time->dd = 31;
+            *dd = 31;
     } else {
-        if (time->dd > 1)
-            time->dd--;
+        if (*dd > 1)
+            (*dd)--;
         else
-            time->dd = 30;
+            *dd = 30;
     }
 }
 
-void increase_month(Time* time) {
-    if (time->MM < 12)
-        time->MM++;
+void increase_month(uint8_t* MM) {
+    if (*MM < 12)
+        (*MM)++;
     else
-        time->MM = 1;
+        *MM = 1;
 }
 
-void decrease_month(Time* time) {
-    if (time->MM > 1)
-        time->MM--;
+void decrease_month(uint8_t* MM) {
+    if (*MM > 1)
+        (*MM)--;
     else
-        time->MM = 12;
+        *MM = 12;
 }
 
-void increase_year(Time* time) {
-    if (time->yy < 99)
-        time->yy++;
-    else
-        time->yy = 0;
+void increase_year(uint8_t* yy) {
+    *yy = (*yy + 1) % 100;
 }
 
-void decrease_year(Time* time) {
-    if (time->yy > 0)
-        time->yy--;
+void decrease_year(uint8_t* yy) {
+    if (*yy > 0)
+        (*yy)--;
     else
-        time->yy = 99;
+        *yy = 99;
 }
 
-void toggle_12_24(Time* time) {
-    if (time->is_12) {
-        if (time->pm && time->hh != 12) time->hh = time->hh + 12;
-        else if (time->hh == 12) time->hh = 0;
-        time->is_12 = 0;
+void convert_12_to_24(uint8_t* hh, uint8_t* pm) {
+    if (*hh < 12) {
+        if (*hh == 0) *hh = 12;
+        *pm = 0;
     } else {
-        if (time->hh < 12) {
-            if (time->hh == 0) time->hh = 12;
-            time->pm = 0;
-        } else {
-            if (time->hh != 12) time->hh = time->hh - 12;
-            time->pm = 1;
-        }
-        time->is_12 = 1;
+        if (*hh != 12) *hh = *hh - 12;
+        *pm = 1;
     }
+}
+
+void convert_24_to_12(uint8_t* hh, uint8_t* pm) {
+    if (*pm && *hh != 12) *hh = *hh + 12;
+    else if (*hh == 12) *hh = 0;
+}
+
+void toggle_12_24(uint8_t* hh, uint8_t* pm, uint8_t* alarm_hh, uint8_t* alarm_pm, uint8_t* is_12) {
+    if (*is_12) {
+        convert_12_to_24(hh, pm);
+        convert_12_to_24(alarm_hh, alarm_pm);
+        *is_12 = 0;
+    } else {
+        convert_24_to_12(hh, pm);
+        convert_24_to_12(alarm_hh, alarm_pm);
+        *is_12 = 1;
+    }
+}
+
+void toggle_alarm_on_off(uint8_t* on) {
+    *on = *on ^ 1;
 }
 
 void copy_time_fields(Time* src_time, Time* dest_time) {

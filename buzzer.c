@@ -25,19 +25,17 @@
 
 #define PWM_DUTY_VAL 213
 
+#define MELODY_REPEATS 3
+
 uint8_t buzzer_is_on = 0;
 uint8_t buzzer_ticks;
 
-//uint8_t notes_arr[] = {C6_NOTE_TMR_VAL, PAUSE, D6_NOTE_TMR_VAL, PAUSE, E6_NOTE_TMR_VAL,
-//    PAUSE, F6_NOTE_TMR_VAL, PAUSE, G6_NOTE_TMR_VAL, PAUSE, A6_NOTE_TMR_VAL,
-//    PAUSE, B6_NOTE_TMR_VAL, PAUSE, C7_NOTE_TMR_VAL, PAUSE, D7_NOTE_TMR_VAL, PAUSE,
-//    E7_NOTE_TMR_VAL, PAUSE, F7_NOTE_TMR_VAL, PAUSE, G7_NOTE_TMR_VAL, A7_NOTE_TMR_VAL, PAUSE, B7_NOTE_TMR_VAL};
-//uint8_t notes_size = 27;
 
-uint8_t notes_arr[] = { A7_NOTE_TMR_VAL, PAUSE, A7_NOTE_TMR_VAL, PAUSE, B7_NOTE_TMR_VAL};
-uint8_t notes_size = 5;
+uint8_t notes_arr[] = {C6_NOTE_TMR_VAL, E6_NOTE_TMR_VAL, G6_NOTE_TMR_VAL, PAUSE, PAUSE, PAUSE};
+uint8_t notes_size = 6;
 
 uint8_t current_notes_ind;
+uint8_t melody_repeat_count;
 
 void buzzer_off(void) {
     PWM4_LoadDutyValue(0);
@@ -58,6 +56,7 @@ void buzzer_on(uint8_t note_tmr_val, uint8_t ticks) {
 void start_melody(void) {
     buzzer_on(notes_arr[0], NOTE_TICKS);
     current_notes_ind = 0;
+    melody_repeat_count = 0;
 }
 
 void refresh_buzzer(void) {
@@ -66,6 +65,10 @@ void refresh_buzzer(void) {
             buzzer_ticks--;
         else if (current_notes_ind < notes_size - 1) {
             current_notes_ind++;
+            buzzer_on(notes_arr[current_notes_ind], NOTE_TICKS);
+        } else if (melody_repeat_count < MELODY_REPEATS - 1) {
+            melody_repeat_count++;
+            current_notes_ind = 0;
             buzzer_on(notes_arr[current_notes_ind], NOTE_TICKS);
         } else {
             buzzer_off();
