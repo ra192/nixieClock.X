@@ -54,6 +54,8 @@
 #define DISPLAY_DATE_DURATION 5 * TICKS_FREQ
 #define DISPLAY_TEMP_DURATION 5 * TICKS_FREQ
 
+#define SHIFT_EFFECT_FREQ TICKS_FREQ / 5
+
 #define DATAEE_LED_MODE_ADDR 0x10
 
 #define LED_RAINBOW_PERIOD TICKS_FREQ / 50
@@ -160,14 +162,14 @@ void set_alarm_on_off_digits(Alarm* alarm) {
     set_digits(0, alarm->on, 0, 0);
 }
 
-void flip_time() {
+void flip_time(void) {
     if (timer_count % 10 == 0) {
         uint8_t i = (timer_count % 100) / 10;
         set_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
     }
 }
 
-void flip_date() {
+void flip_date(void) {
     if (date_displayed_ticks % 10 == 0) {
         uint8_t dig_num = (uint8_t) (date_displayed_ticks / 100);
         uint8_t i = (date_displayed_ticks % 100) / 10;
@@ -186,6 +188,32 @@ void flip_date() {
 
             case 3:
                 set_digits(time.dd / 10, time.dd % 10, time.MM / 10, flip_num_arr[i]);
+        }
+    }
+}
+
+void shift_temp(void) {
+    if (temp_displayed_ticks % (SHIFT_EFFECT_FREQ) == 0) {
+        switch (temp_displayed_ticks / (SHIFT_EFFECT_FREQ)) {
+            case 0:
+                set_digits(time.hh % 10, time.mm / 10, time.mm % 10, 0);
+                set_digit_displayed(1, 1, 1, 0);
+                break;
+            case 1:
+                set_digits(time.mm / 10, time.mm % 10, 0, 0);
+                set_digit_displayed(1, 1, 0, 0);
+                break;
+            case 2:
+                set_digits(time.mm % 10, 0, 0, temp.int_part / 10);
+                set_digit_displayed(1, 0, 0, 1);
+                break;
+            case 3:
+                set_digits(0, 0, temp.int_part / 10, temp.int_part % 10);
+                set_digit_displayed(0, 0, 1, 1);
+                break;
+            default:
+                set_digits(0, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10);
+                set_digit_displayed(0, 1, 1, 1);
         }
     }
 }
@@ -291,9 +319,12 @@ void handle_display_temp(void) {
     } else if (btn3.state == LONG_PRESSED) {
         state = SET_ALARM_HH;
         set_alarm_digits(&alarm);
-    } else {
-        temp_displayed_ticks++;
+    } else if (temp_displayed_ticks < TICKS_FREQ) {
+        shift_temp();
+    } else if (temp_displayed_ticks == TICKS_FREQ) {
+        set_temp_digits(&temp);
     }
+    temp_displayed_ticks++;
 }
 
 void handle_set_hour(void) {
@@ -407,21 +438,21 @@ void handle_set_12_24() {
 }
 
 void handle_set_alarm_hour(void) {
-        if (btn2.state == PRESSED) {
-            state = SET_ALARM_MM;
-            set_digit_displayed_all();
-        } else if (btn1.state == PRESSED
-                || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            decrease_hour(&alarm.hh, &alarm.pm, time.is_12);
-            set_alarm_digits(&alarm);
-        } else if (btn3.state == PRESSED
-                || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            increase_hour(&alarm.hh, &alarm.pm, time.is_12);
-            set_alarm_digits(&alarm);
-        } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-            toggle_digit_displayed(0);
-            toggle_digit_displayed(1);
-        }
+    if (btn2.state == PRESSED) {
+        state = SET_ALARM_MM;
+        set_digit_displayed_all();
+    } else if (btn1.state == PRESSED
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        decrease_hour(&alarm.hh, &alarm.pm, time.is_12);
+        set_alarm_digits(&alarm);
+    } else if (btn3.state == PRESSED
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        increase_hour(&alarm.hh, &alarm.pm, time.is_12);
+        set_alarm_digits(&alarm);
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
+    }
 }
 
 void handle_set_alarm_minute(void) {
