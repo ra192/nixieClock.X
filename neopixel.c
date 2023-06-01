@@ -112,8 +112,24 @@ void set_leds_colour(Colour* colour) {
     sendRGB(colour);
 }
 
+void set_led_colours(Colour* colour1, Colour* colour2, Colour* colour3, Colour* colour4) {
+    sendRGB(colour1);
+    sendRGB(colour2);
+    sendRGB(colour3);
+    sendRGB(colour4);
+}
+
 // sine wave rainbow. See https://www.instructables.com/How-to-Make-Proper-Rainbow-and-Random-Colors-With-/
-void set_leds_colour_by_angle(int angle) { 
-  Colour colour = {lights[(angle+120)%360], lights[angle], lights[(angle+240)%360]};   
-  set_leds_colour(&colour);
+
+void set_leds_colour_by_angle_1(int angle) {
+    Colour colour = {lights[(angle + 120) % 360], lights[angle], lights[(angle + 240) % 360]};
+    set_leds_colour(&colour);
+}
+
+void set_leds_colour_by_angle_2(int angle) {
+    Colour colour1 = {lights[(angle + 120) % 360], lights[angle], lights[(angle + 240) % 360]};
+    Colour colour2 = {lights[(angle + 210) % 360], lights[angle + 90], lights[(angle + 330) % 360]};
+    Colour colour3 = {lights[(angle + 300) % 360], lights[angle + 180], lights[(angle + 60) % 360]};
+    Colour colour4 = {lights[(angle + 30) % 360], lights[angle + 270], lights[(angle + 150) % 360]};
+    set_led_colours(&colour1, &colour2, &colour3, &colour4);
 }

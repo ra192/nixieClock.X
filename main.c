@@ -58,7 +58,7 @@
 
 #define DATAEE_LED_MODE_ADDR 0x10
 
-#define LED_RAINBOW_PERIOD TICKS_FREQ / 50
+#define LED_RAINBOW_FREQ TICKS_FREQ / 50
 
 typedef enum State {
     DISPLAY_TIME,
@@ -80,7 +80,8 @@ typedef enum LedState {
     LED_RED,
     LED_GREEN,
     LED_BLUE,
-    LED_RAINBOW
+    LED_RAINBOW_1,
+    LED_RAINBOW_2
 } LedState;
 
 Colour OFF_COLOUR = {0, 0, 0};
@@ -221,9 +222,6 @@ void shift_temp(void) {
 
 void set_led_state(void) {
     switch (led_state) {
-        case LED_OFF:
-            set_leds_colour(&OFF_COLOUR);
-            break;
         case LED_RED:
             set_leds_colour(&RED);
             break;
@@ -233,9 +231,13 @@ void set_led_state(void) {
         case LED_BLUE:
             set_leds_colour(&BLUE);
             break;
-        case LED_RAINBOW:
+        case LED_RAINBOW_1:
             rainbow_angle = 0;
-            set_leds_colour_by_angle(rainbow_angle);
+            set_leds_colour_by_angle_1(rainbow_angle);
+            break;
+        case LED_RAINBOW_2:
+            rainbow_angle = 0;
+            set_leds_colour_by_angle_2(rainbow_angle);
             break;
         default:
             set_leds_colour(&OFF_COLOUR);
@@ -255,9 +257,12 @@ void change_led_state(void) {
             led_state = LED_BLUE;
             break;
         case LED_BLUE:
-            led_state = LED_RAINBOW;
+            led_state = LED_RAINBOW_1;
             break;
-        case LED_RAINBOW:
+        case LED_RAINBOW_1:
+            led_state = LED_RAINBOW_2;
+            break;
+        case LED_RAINBOW_2:
             led_state = LED_OFF;
     }
     set_led_state();
@@ -265,9 +270,15 @@ void change_led_state(void) {
 }
 
 void change_rainbow_colour(void) {
-    if (timer_count % LED_RAINBOW_PERIOD == 0) {
+    if (timer_count % (LED_RAINBOW_FREQ) == 0) {
         rainbow_angle = (rainbow_angle + 1) % 360;
-        set_leds_colour_by_angle(rainbow_angle);
+        switch(led_state) {
+            case LED_RAINBOW_1:
+                set_leds_colour_by_angle_1(rainbow_angle);
+                break;
+            default:
+                set_leds_colour_by_angle_2(rainbow_angle);
+        }
     }
 }
 
@@ -588,7 +599,7 @@ void main(void) {
             if (timer_count == 0) {
                 read_time(&time);
             }
-            if (led_state == LED_RAINBOW) change_rainbow_colour();
+            if (led_state == LED_RAINBOW_1 || led_state == LED_RAINBOW_2) change_rainbow_colour();
             handle_alarm();
             timer_ticked = 0;
         }

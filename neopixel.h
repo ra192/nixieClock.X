@@ -22,7 +22,9 @@ extern "C" {
 
     void set_leds_colour(Colour* colour);
 
-    void set_leds_colour_by_angle(int angle);
+    void set_leds_colour_by_angle_1(int angle);
+    
+    void set_leds_colour_by_angle_2(int angle);
 
 #ifdef	__cplusplus
 }
