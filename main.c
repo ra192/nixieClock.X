@@ -97,6 +97,7 @@ Time time;
 Time updated_time;
 
 Alarm alarm;
+uint8_t alarm_started = 0;
 
 Temp temp;
 
@@ -488,12 +489,15 @@ void handle_set_alarm_on_off(void) {
 }
 
 void handle_alarm(void) {
-    if (alarm.on && time.hh == alarm.hh && time.mm == alarm.mm && (time.is_12 == 0 || time.pm == alarm.pm)) {
-        if (time.ss == alarm.ss && timer_count == 0)
-            start_melody();
-        else
-            refresh_buzzer();
-    }
+    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
+            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
+        start_melody();
+        alarm_started = 1;
+    } else if (alarm_started && btn2.state == PRESSED) {
+        buzzer_off();
+        alarm_started = 0;
+    } else if (alarm_started)
+        refresh_buzzer();
 }
 
 void handle_state(void) {

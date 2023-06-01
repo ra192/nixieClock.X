@@ -14,6 +14,7 @@ extern "C" {
 
 #include <xc.h>
     
+void buzzer_off(void);
     
 void start_melody(void);
 
