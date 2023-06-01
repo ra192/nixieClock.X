@@ -272,10 +272,15 @@ void change_rainbow_colour(void) {
 }
 
 void refresh_dek(void) {
-    if (time.ss == 0 && timer_count == 0) {
-        dek_set_zero();
-    } else if (time.ss / 2 != dek_get_cat_num()) {
-        dek_move_next();
+    switch (state) {
+        case DISPLAY_DATE:
+            if (timer_count % 8 == 0)
+                dek_move_next();
+            break;
+        default:
+            if (time.ss / 2 != dek_get_cat_num()) {
+                dek_move_next();
+            }
     }
 }
 
