@@ -4,41 +4,41 @@
 #include "mcc_generated_files/pwm4.h"
 #include "mcc_generated_files/tmr4.h"
 
-#define B7_NOTE_TMR_VAL 62
-#define AS7_NOTE_TMR_VAL 66
-#define A7_NOTE_TMR_VAL 70
-#define GS7_NOTE_TMR_VAL 74
-#define G7_NOTE_TMR_VAL 79
-#define FS7_NOTE_TMR_VAL 83
-#define F7_NOTE_TMR_VAL 88
-#define E7_NOTE_TMR_VAL 94
-#define DS7_NOTE_TMR_VAL 99
-#define D7_NOTE_TMR_VAL 105
-#define CS7_NOTE_TMR_VAL 112
-#define C7_NOTE_TMR_VAL 118
-#define B6_NOTE_TMR_VAL 125
-#define AS6_NOTE_TMR_VAL 133
-#define A6_NOTE_TMR_VAL 141
-#define GS6_NOTE_TMR_VAL 149
-#define G6_NOTE_TMR_VAL 158
-#define FS6_NOTE_TMR_VAL 168
-#define F6_NOTE_TMR_VAL 178
-#define E6_NOTE_TMR_VAL 188
-#define DS6_NOTE_TMR_VAL 200
-#define D6_NOTE_TMR_VAL 211
-#define CS6_NOTE_TMR_VAL 224
-#define C6_NOTE_TMR_VAL 238
+#define NOTE_B7 62
+#define NOTE_AS7 66
+#define NOTE_A7 70
+#define NOTE_GS7 74
+#define NOTE_G7 79
+#define NOTE_FS7 83
+#define NOTE_F7 88
+#define NOTE_E7 94
+#define NOTE_DS7 99
+#define NOTE_D7 105
+#define NOTE_CS7 112
+#define NOTE_C7 118
+#define NOTE_B6 125
+#define NOTE_AS6 133
+#define NOTE_A6 141
+#define NOTE_GS6 149
+#define NOTE_G6 158
+#define NOTE_FS6 168
+#define NOTE_F6 178
+#define NOTE_E6 188
+#define NOTE_DS6 200
+#define NOTE_D6 211
+#define NOTE_CS6 224
+#define NOTE_C6 238
 
-#define PAUSE 0x00
+#define REST 0x00
 
-#define NOTE_LENGTH_1_8 50
-#define NOTE_LENGTH_1_4 100
-#define NOTE_LENGTH_1_2 200
-#define NOTE_LENGTH_1 400
+#define NOTE_LENGTH_1_8 80
+#define NOTE_LENGTH_1_4 160
+#define NOTE_LENGTH_1_2 320
+#define NOTE_LENGTH_1 640
 
 #define PWM_DUTY_VAL 213
 
-#define MELODY_REPEATS 3
+#define MELODY_REPEATS 5
 
 typedef struct Note {
     uint8_t note;
@@ -50,26 +50,40 @@ uint16_t buzzer_ticks;
 
 
 Note notes_arr[] = {
-    {E7_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {D7_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {FS6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-    {GS6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-
-    {CS7_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {B6_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {D6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-    {E6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-
-    {B6_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {A6_NOTE_TMR_VAL, NOTE_LENGTH_1_8},
-    {CS6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-    {E6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
-
-    {A6_NOTE_TMR_VAL, NOTE_LENGTH_1_2},
-
-    {PAUSE, NOTE_LENGTH_1}
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {NOTE_D7, NOTE_LENGTH_1_8},
+    {NOTE_B6, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_B6, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {NOTE_GS7, NOTE_LENGTH_1_8},
+    {NOTE_GS7, NOTE_LENGTH_1_8},
+    {NOTE_A7, NOTE_LENGTH_1_8},
+    {NOTE_B7, NOTE_LENGTH_1_8},
+    {NOTE_A7, NOTE_LENGTH_1_8},
+    {NOTE_A7, NOTE_LENGTH_1_8},
+    {NOTE_A7, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_D7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {NOTE_FS7, NOTE_LENGTH_1_8},
+    {NOTE_E7, NOTE_LENGTH_1_8},
 };
-uint8_t notes_size = 14;
+uint8_t notes_size = 32;
 
 uint8_t current_notes_ind;
 uint8_t melody_repeat_count;
@@ -80,7 +94,7 @@ void buzzer_off(void) {
 }
 
 void buzzer_on(uint8_t note_tmr_val, uint16_t ticks) {
-    if (note_tmr_val == PAUSE) {
+    if (note_tmr_val == REST) {
         PWM4_LoadDutyValue(0);
     } else {
         TMR4_LoadPeriodRegister(note_tmr_val);
