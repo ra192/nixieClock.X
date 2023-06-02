@@ -13,12 +13,14 @@ extern "C" {
 #endif
 
 #include <xc.h>
-    
-void buzzer_off(void);
-    
-void start_melody(void);
 
-void refresh_buzzer(void);
+    void buzzer_off(void);
+
+    uint8_t buzzer_get_on(void);
+
+    void start_melody(void);
+
+    void refresh_buzzer(void);
 
 
 #ifdef	__cplusplus
