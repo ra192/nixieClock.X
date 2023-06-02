@@ -588,8 +588,6 @@ void main(void) {
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
     set_led_state();
 
-    dek_set_zero();
-
     while (1) {
         if (timer_ticked) {
             refresh_digits();

@@ -21,17 +21,28 @@
 
 #define PAUSE 0x00
 
-#define NOTE_TICKS 100
+#define NOTE_LENGTH_1_4 100
+#define NOTE_LENGTH_1 400
 
 #define PWM_DUTY_VAL 213
 
 #define MELODY_REPEATS 3
 
+typedef struct Note {
+    uint8_t note;
+    uint16_t length;
+} Note;
+
 uint8_t buzzer_is_on = 0;
-uint8_t buzzer_ticks;
+uint16_t buzzer_ticks;
 
 
-uint8_t notes_arr[] = {C6_NOTE_TMR_VAL, E6_NOTE_TMR_VAL, G6_NOTE_TMR_VAL, PAUSE, PAUSE, PAUSE};
+Note notes_arr[] = {
+    {C6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
+    {E6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
+    {G6_NOTE_TMR_VAL, NOTE_LENGTH_1_4},
+    {PAUSE, NOTE_LENGTH_1}
+};
 uint8_t notes_size = 6;
 
 uint8_t current_notes_ind;
@@ -42,7 +53,7 @@ void buzzer_off(void) {
     buzzer_is_on = 0;
 }
 
-void buzzer_on(uint8_t note_tmr_val, uint8_t ticks) {
+void buzzer_on(uint8_t note_tmr_val, uint16_t ticks) {
     if (note_tmr_val == PAUSE) {
         PWM4_LoadDutyValue(0);
     } else {
@@ -54,7 +65,7 @@ void buzzer_on(uint8_t note_tmr_val, uint8_t ticks) {
 }
 
 void start_melody(void) {
-    buzzer_on(notes_arr[0], NOTE_TICKS);
+    buzzer_on(notes_arr[0].note, notes_arr[0].length);
     current_notes_ind = 0;
     melody_repeat_count = 0;
 }
@@ -65,11 +76,11 @@ void refresh_buzzer(void) {
             buzzer_ticks--;
         else if (current_notes_ind < notes_size - 1) {
             current_notes_ind++;
-            buzzer_on(notes_arr[current_notes_ind], NOTE_TICKS);
+            buzzer_on(notes_arr[current_notes_ind].note, notes_arr[current_notes_ind].length);
         } else if (melody_repeat_count < MELODY_REPEATS - 1) {
             melody_repeat_count++;
             current_notes_ind = 0;
-            buzzer_on(notes_arr[current_notes_ind], NOTE_TICKS);
+            buzzer_on(notes_arr[current_notes_ind].note, notes_arr[current_notes_ind].length);
         } else {
             buzzer_off();
         }
