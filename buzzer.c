@@ -31,14 +31,18 @@
 
 #define REST 0x00
 
+#define NOTE_LENGTH_1_16 40
+#define NOTE_LENGTH_1_16_D 60
 #define NOTE_LENGTH_1_8 80
+#define NOTE_LENGTH_1_8_D 120
 #define NOTE_LENGTH_1_4 160
+#define NOTE_LENGTH_1_4_D 240
 #define NOTE_LENGTH_1_2 320
 #define NOTE_LENGTH_1 640
 
 #define PWM_DUTY_VAL 213
 
-#define MELODY_REPEATS 5
+#define MELODY_REPEATS 1
 
 typedef struct Note {
     uint8_t note;
@@ -49,7 +53,8 @@ uint8_t buzzer_is_on = 0;
 uint16_t buzzer_ticks;
 
 
-Note notes_arr[] = {
+const Note melody_0[] = {
+    // Take on me https://github.com/robsoncouto/arduino-songs/blob/master/takeonme/takeonme.ino
     {NOTE_FS7, NOTE_LENGTH_1_8},
     {NOTE_FS7, NOTE_LENGTH_1_8},
     {NOTE_D7, NOTE_LENGTH_1_8},
@@ -83,8 +88,70 @@ Note notes_arr[] = {
     {NOTE_FS7, NOTE_LENGTH_1_8},
     {NOTE_E7, NOTE_LENGTH_1_8},
 };
-uint8_t notes_size = 32;
+uint8_t melody_0_size = 32;
 
+const Note melody_1[] = {
+//    {NOTE_A6, NOTE_LENGTH_1_4_D},
+//    {NOTE_A6, NOTE_LENGTH_1_4_D},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_F6, NOTE_LENGTH_1_8},
+//    {REST, NOTE_LENGTH_1_8},
+//    {NOTE_A6, NOTE_LENGTH_1_4_D},
+//    {NOTE_A6, NOTE_LENGTH_1_4_D},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_A6, NOTE_LENGTH_1_16},
+//    {NOTE_F6, NOTE_LENGTH_1_8},
+//    {REST, NOTE_LENGTH_1_8},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_F6, NOTE_LENGTH_1_8_D},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_F6, NOTE_LENGTH_1_8_D},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_2}, //4
+    {NOTE_E7, NOTE_LENGTH_1_4},
+    {NOTE_E7, NOTE_LENGTH_1_4},
+    {NOTE_E7, NOTE_LENGTH_1_4},
+    {NOTE_F7, NOTE_LENGTH_1_8_D},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_F7, NOTE_LENGTH_1_8_D},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_2},
+    {NOTE_A7, NOTE_LENGTH_1_4},
+    {NOTE_A6, NOTE_LENGTH_1_8_D},
+    {NOTE_A6, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_4},
+    {NOTE_GS7, NOTE_LENGTH_1_8_D},
+    {NOTE_G7, NOTE_LENGTH_1_16}, //7 
+    {NOTE_DS7, NOTE_LENGTH_1_16},
+    {NOTE_D7, NOTE_LENGTH_1_16},
+    {NOTE_DS7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_8},
+    {NOTE_A6, NOTE_LENGTH_1_8},
+    {NOTE_DS7, NOTE_LENGTH_1_4},
+    {NOTE_D7, NOTE_LENGTH_1_8_D},
+    {NOTE_CS7, NOTE_LENGTH_1_16},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_B6, NOTE_LENGTH_1_16},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+//    {REST, NOTE_LENGTH_1_8},
+//    {NOTE_F6, NOTE_LENGTH_1_8},
+//    {NOTE_GS6, NOTE_LENGTH_1_4},
+//    {NOTE_F6, NOTE_LENGTH_1_8_D},
+//    {NOTE_A6, NOTE_LENGTH_1_16_D} //9
+};
+uint8_t melody_1_size = 35;
+
+const Note* current_melody;
+uint8_t current_melody_size;
 uint8_t current_notes_ind;
 uint8_t melody_repeat_count;
 
@@ -108,23 +175,35 @@ uint8_t buzzer_get_on(void) {
     return buzzer_is_on;
 }
 
-void start_melody(void) {
-    buzzer_on(notes_arr[0].note, notes_arr[0].length);
+void start_melody(uint8_t melody_index) {
+    switch (melody_index) {
+        case 0:
+            current_melody = melody_0;
+            current_melody_size = melody_0_size;
+            break;
+        default:
+            current_melody = melody_1;
+            current_melody_size = melody_1_size;
+    }
+
+    buzzer_on(current_melody[0].note, current_melody[0].length);
     current_notes_ind = 0;
     melody_repeat_count = 0;
 }
 
 void refresh_buzzer(void) {
     if (buzzer_is_on) {
-        if (buzzer_ticks > 0)
+        if (buzzer_ticks > 0) {
+            if (buzzer_ticks == current_melody[current_notes_ind].length >> 3)
+                PWM4_LoadDutyValue(0);
             buzzer_ticks--;
-        else if (current_notes_ind < notes_size - 1) {
+        } else if (current_notes_ind < current_melody_size - 1) {
             current_notes_ind++;
-            buzzer_on(notes_arr[current_notes_ind].note, notes_arr[current_notes_ind].length);
+            buzzer_on(current_melody[current_notes_ind].note, current_melody[current_notes_ind].length);
         } else if (melody_repeat_count < MELODY_REPEATS - 1) {
             melody_repeat_count++;
             current_notes_ind = 0;
-            buzzer_on(notes_arr[current_notes_ind].note, notes_arr[current_notes_ind].length);
+            buzzer_on(current_melody[current_notes_ind].note, current_melody[current_notes_ind].length);
         } else {
             buzzer_off();
         }

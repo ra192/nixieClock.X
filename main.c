@@ -504,18 +504,18 @@ void handle_set_alarm_on_off(void) {
 }
 
 void handle_alarm(void) {
-    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
-            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
-        start_melody();
-    } else if (buzzer_get_on() && btn2.state == PRESSED) {
-        buzzer_off();
-    } else if (buzzer_get_on())
-        refresh_buzzer();
-//    if(btn1.state == PRESSED) {
+//    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
+//            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
 //        start_melody();
-//    } else {
+//    } else if (buzzer_get_on() && btn2.state == PRESSED) {
+//        buzzer_off();
+//    } else if (buzzer_get_on())
 //        refresh_buzzer();
-//    }
+    if(btn1.state == PRESSED) {
+        start_melody(1);
+    } else {
+        refresh_buzzer();
+    }
 }
 
 void handle_state(void) {

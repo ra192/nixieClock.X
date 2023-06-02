@@ -18,7 +18,7 @@ extern "C" {
 
     uint8_t buzzer_get_on(void);
 
-    void start_melody(void);
+    void start_melody(uint8_t melody_index);
 
     void refresh_buzzer(void);
 
