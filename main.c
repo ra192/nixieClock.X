@@ -60,6 +60,8 @@
 
 #define LED_RAINBOW_FREQ TICKS_FREQ / 50
 
+#define DATAEE_ALARM_MELODY_ADDR 0x11
+
 typedef enum State {
     DISPLAY_TIME,
     DISPLAY_DATE,
@@ -72,7 +74,8 @@ typedef enum State {
     SET_12_24,
     SET_ALARM_HH,
     SET_ALARM_MM,
-    SET_ALARM_ON_OFF
+    SET_ALARM_ON_OFF,
+    SET_ALARM_MELODY
 } State;
 
 typedef enum LedState {
@@ -113,6 +116,8 @@ uint16_t temp_displayed_ticks;
 LedState led_state;
 
 uint8_t rainbow_angle;
+
+uint8_t alarm_melody;
 
 void change_rainbow_colour(void);
 
@@ -159,8 +164,8 @@ void set_alarm_digits(Alarm* alarm) {
     set_digits(alarm->hh / 10, alarm->hh % 10, alarm->mm / 10, alarm->mm % 10);
 }
 
-void set_alarm_on_off_digits(Alarm* alarm) {
-    set_digits(0, alarm->on, 0, 0);
+void set_alarm_on_off_and_melody_digits(Alarm* alarm, uint8_t alarm_melody) {
+    set_digits(0, alarm->on, 0, alarm_melody);
 }
 
 void flip_time(void) {
@@ -271,7 +276,7 @@ void change_led_state(void) {
 void change_rainbow_colour(void) {
     if (timer_count % (LED_RAINBOW_FREQ) == 0) {
         rainbow_angle = (rainbow_angle + 1) % 360;
-        switch(led_state) {
+        switch (led_state) {
             case LED_RAINBOW_1:
                 set_leds_colour_by_angle_1(rainbow_angle);
                 break;
@@ -474,7 +479,7 @@ void handle_set_alarm_hour(void) {
 void handle_set_alarm_minute(void) {
     if (btn2.state == PRESSED) {
         state = SET_ALARM_ON_OFF;
-        set_alarm_on_off_digits(&alarm);
+        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_minute(&alarm.mm);
@@ -491,31 +496,52 @@ void handle_set_alarm_minute(void) {
 
 void handle_set_alarm_on_off(void) {
     if (btn2.state == PRESSED) {
+        state = SET_ALARM_MELODY;
+        set_digit_displayed_all();
+    } else if (btn1.state == PRESSED) {
+        if (alarm_melody > 0)
+            alarm_melody--;
+        else
+            alarm_melody = MELODY_COUNT - 1;
+        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
+    } else if (btn3.state == PRESSED) {
+        alarm_melody = (alarm_melody + 1) % MELODY_COUNT;
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(2);
+        toggle_digit_displayed(3);
+    }
+}
+
+void handle_set_alarm_melody(void) {
+    if (btn2.state == PRESSED) {
         update_alarm(&alarm, time.is_12);
+        DATAEE_WriteByte(DATAEE_ALARM_MELODY_ADDR, alarm_melody);
         state = DISPLAY_TIME;
         set_time_digits(&time);
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
         toggle_alarm_on_off(&alarm.on);
-        set_alarm_on_off_digits(&alarm);
+        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
 }
 
 void handle_alarm(void) {
-//    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
-//            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
-//        start_melody();
-//    } else if (buzzer_get_on() && btn2.state == PRESSED) {
-//        buzzer_off();
-//    } else if (buzzer_get_on())
+        if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
+                && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
+            start_melody();
+        } else if (buzzer_get_on() && btn2.state == PRESSED) {
+            buzzer_off();
+        } else if (buzzer_get_on())
+            refresh_buzzer();
+//    if (btn1.state == PRESSED) {
+//        start_melody(alarm_melody);
+//    } else {
+//
 //        refresh_buzzer();
-    if(btn1.state == PRESSED) {
-        start_melody(1);
-    } else {
-        refresh_buzzer();
-    }
+//    }
 }
 
 void handle_state(void) {
@@ -555,6 +581,9 @@ void handle_state(void) {
             break;
         case SET_ALARM_ON_OFF:
             handle_set_alarm_on_off();
+            break;
+        case SET_ALARM_MELODY:
+            handle_set_alarm_melody();
     }
 }
 
@@ -589,6 +618,8 @@ void main(void) {
 
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
     set_led_state();
+
+    alarm_melody = DATAEE_ReadByte(DATAEE_ALARM_MELODY_ADDR);
 
     while (1) {
         if (timer_ticked) {
