@@ -289,6 +289,7 @@ void change_rainbow_colour(void) {
 void refresh_dek(void) {
     switch (state) {
         case DISPLAY_DATE:
+        case DISPLAY_TEMP:    
             if (timer_count % 8 == 0)
                 dek_move_next();
             break;
@@ -325,6 +326,9 @@ void handle_display_date(void) {
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
+    } else if (btn2.state == LONG_PRESSED) {
+        state = SET_ALARM_HH;
+        set_alarm_digits(&alarm);
     } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
     } else if (date_displayed_ticks == TICKS_FREQ) {
@@ -337,9 +341,6 @@ void handle_display_temp(void) {
     if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } else if (btn3.state == LONG_PRESSED) {
-        state = SET_ALARM_HH;
-        set_alarm_digits(&alarm);
     } else if (temp_displayed_ticks < TICKS_FREQ) {
         shift_temp();
     } else if (temp_displayed_ticks == TICKS_FREQ) {
@@ -498,17 +499,12 @@ void handle_set_alarm_on_off(void) {
     if (btn2.state == PRESSED) {
         state = SET_ALARM_MELODY;
         set_digit_displayed_all();
-    } else if (btn1.state == PRESSED) {
-        if (alarm_melody > 0)
-            alarm_melody--;
-        else
-            alarm_melody = MELODY_COUNT - 1;
+    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
+        toggle_alarm_on_off(&alarm.on);
         set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
-    } else if (btn3.state == PRESSED) {
-        alarm_melody = (alarm_melody + 1) % MELODY_COUNT;
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-        toggle_digit_displayed(2);
-        toggle_digit_displayed(3);
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
     }
 }
 
@@ -518,13 +514,18 @@ void handle_set_alarm_melody(void) {
         DATAEE_WriteByte(DATAEE_ALARM_MELODY_ADDR, alarm_melody);
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
-        toggle_alarm_on_off(&alarm.on);
+    } else if (btn1.state == PRESSED) {
+        if (alarm_melody > 0)
+            alarm_melody--;
+        else
+            alarm_melody = MELODY_COUNT - 1;
+        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
+    } else if (btn3.state == PRESSED) {
+        alarm_melody = (alarm_melody + 1) % MELODY_COUNT;
         set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        toggle_digit_displayed(2);
+        toggle_digit_displayed(3);
     }
 }
 
@@ -536,12 +537,6 @@ void handle_alarm(void) {
         buzzer_off();
     } else if (buzzer_get_on())
         refresh_buzzer();
-    //    if (btn1.state == PRESSED) {
-    //        start_melody(alarm_melody);
-    //    } else {
-    //
-    //        refresh_buzzer();
-    //    }
 }
 
 void handle_state(void) {
