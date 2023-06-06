@@ -80,9 +80,6 @@ typedef enum State {
 
 typedef enum LedState {
     LED_OFF,
-    LED_RED,
-    LED_GREEN,
-    LED_BLUE,
     LED_RAINBOW_1,
     LED_RAINBOW_2
 } LedState;
@@ -118,7 +115,7 @@ uint16_t temp_displayed_ticks;
 
 LedState led_state;
 
-uint8_t rainbow_angle;
+uint16_t rainbow_angle;
 
 uint8_t alarm_melody;
 
@@ -229,15 +226,6 @@ void shift_temp(void) {
 
 void set_led_state(void) {
     switch (led_state) {
-        case LED_RED:
-            set_leds_colour(&RED);
-            break;
-        case LED_GREEN:
-            set_leds_colour(&GREEN);
-            break;
-        case LED_BLUE:
-            set_leds_colour(&BLUE);
-            break;
         case LED_RAINBOW_1:
             rainbow_angle = 0;
             set_leds_colour_by_angle_1(rainbow_angle);
@@ -255,15 +243,6 @@ void set_led_state(void) {
 void change_led_state(void) {
     switch (led_state) {
         case LED_OFF:
-            led_state = LED_RED;
-            break;
-        case LED_RED:
-            led_state = LED_GREEN;
-            break;
-        case LED_GREEN:
-            led_state = LED_BLUE;
-            break;
-        case LED_BLUE:
             led_state = LED_RAINBOW_1;
             break;
         case LED_RAINBOW_1:
@@ -282,6 +261,7 @@ void change_rainbow_colour(void) {
         switch (led_state) {
             case LED_RAINBOW_1:
                 set_leds_colour_by_angle_1(rainbow_angle);
+
                 break;
             default:
                 set_leds_colour_by_angle_2(rainbow_angle);
@@ -298,6 +278,7 @@ void refresh_dek(void) {
             break;
         default:
             if (time.ss % 30 != dek_get_cat_num()) {
+
                 dek_move_next();
             }
     }
@@ -322,6 +303,7 @@ void handle_display_time(void) {
     } else if (time.mm % 10 == 0 && time.ss == 30) {
         flip_time();
     } else if (timer_count == 0) {
+
         set_time_digits(&time);
     }
 }
@@ -333,6 +315,7 @@ void handle_display_date(void) {
     } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
     } else if (date_displayed_ticks == TICKS_FREQ) {
+
         set_date_digits(&date);
     }
     date_displayed_ticks++;
@@ -345,6 +328,7 @@ void handle_display_temp(void) {
     } else if (temp_displayed_ticks < TICKS_FREQ) {
         shift_temp();
     } else if (temp_displayed_ticks == TICKS_FREQ) {
+
         set_temp_digits(&temp);
     }
     temp_displayed_ticks++;
@@ -363,6 +347,7 @@ void handle_set_hour(void) {
         increase_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
         set_time_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -381,6 +366,7 @@ void handle_set_minute(void) {
         increase_minute(&updated_time.mm);
         set_time_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -398,6 +384,7 @@ void handle_set_12_24() {
         toggle_12_24(&updated_time.hh, &updated_time.pm, &alarm.hh, &alarm.pm, &updated_time.is_12);
         set_12_24_digits(&updated_time);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -419,6 +406,7 @@ void handle_set_day(void) {
         }
     }
     if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -437,6 +425,7 @@ void handle_set_month(void) {
         increase_month(&updated_date.MM);
         set_date_digits(&updated_date);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -457,6 +446,7 @@ void handle_set_year(void) {
         increase_year(&updated_date.yy);
         set_year_digits(&updated_date);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -475,6 +465,7 @@ void handle_set_alarm_hour(void) {
         increase_hour(&alarm.hh, &alarm.pm, time.is_12);
         set_alarm_digits(&alarm);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -493,6 +484,7 @@ void handle_set_alarm_minute(void) {
         increase_minute(&alarm.mm);
         set_alarm_digits(&alarm);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -506,6 +498,7 @@ void handle_set_alarm_on_off(void) {
         toggle_alarm_on_off(&alarm.on);
         set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -527,6 +520,7 @@ void handle_set_alarm_melody(void) {
         alarm_melody = (alarm_melody + 1) % MELODY_COUNT;
         set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
     }
@@ -538,7 +532,9 @@ void handle_alarm(void) {
         start_melody(alarm_melody);
     } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
         buzzer_off();
-    } else if (buzzer_get_on())
+    } else
+
+        if (buzzer_get_on())
         refresh_buzzer();
 }
 
@@ -579,6 +575,7 @@ void handle_state(void) {
             break;
         case SET_ALARM_ON_OFF:
             handle_set_alarm_on_off();
+
             break;
         case SET_ALARM_MELODY:
             handle_set_alarm_melody();
