@@ -58,9 +58,12 @@
 
 #define DATAEE_LED_MODE_ADDR 0x10
 
+#define DATAEE_LED_COLOUR_FIXED_ANGEL_1 0x11
+#define DATAEE_LED_COLOUR_FIXED_ANGEL_2 0x12
+
 #define LED_RAINBOW_FREQ TICKS_FREQ / 50
 
-#define DATAEE_ALARM_MELODY_ADDR 0x11
+#define DATAEE_ALARM_MELODY_ADDR 0x14
 
 typedef enum State {
     DISPLAY_TIME,
@@ -80,14 +83,9 @@ typedef enum State {
 
 typedef enum LedState {
     LED_OFF,
-    LED_RAINBOW_1,
-    LED_RAINBOW_2
+    LED_RAINBOW,
+    LED_FIXED
 } LedState;
-
-Colour OFF_COLOUR = {0, 0, 0};
-Colour RED = {64, 0, 0};
-Colour GREEN = {0, 64, 0};
-Colour BLUE = {0, 0, 64};
 
 volatile uint8_t timer_ticked = 0;
 volatile uint16_t timer_count = 0;
@@ -226,16 +224,15 @@ void shift_temp(void) {
 
 void set_led_state(void) {
     switch (led_state) {
-        case LED_RAINBOW_1:
+        case LED_RAINBOW:
             rainbow_angle = 0;
-            set_leds_colour_by_angle_1(rainbow_angle);
+            set_leds_colour_by_angle(rainbow_angle);
             break;
-        case LED_RAINBOW_2:
-            rainbow_angle = 0;
-            set_leds_colour_by_angle_2(rainbow_angle);
+        case LED_FIXED:
+            set_leds_colour_by_angle(rainbow_angle);
             break;
         default:
-            set_leds_colour(&OFF_COLOUR);
+            led_off();
             led_state = LED_OFF;
     }
 }
@@ -243,12 +240,14 @@ void set_led_state(void) {
 void change_led_state(void) {
     switch (led_state) {
         case LED_OFF:
-            led_state = LED_RAINBOW_1;
+            led_state = LED_RAINBOW;
             break;
-        case LED_RAINBOW_1:
-            led_state = LED_RAINBOW_2;
+        case LED_RAINBOW:
+            led_state = LED_FIXED;
+            DATAEE_WriteByte(DATAEE_LED_COLOUR_FIXED_ANGEL_1, rainbow_angle >> 8);
+            DATAEE_WriteByte(DATAEE_LED_COLOUR_FIXED_ANGEL_2, rainbow_angle & 0xFF);
             break;
-        case LED_RAINBOW_2:
+        case LED_FIXED:
             led_state = LED_OFF;
     }
     set_led_state();
@@ -258,14 +257,7 @@ void change_led_state(void) {
 void change_rainbow_colour(void) {
     if (timer_count % (LED_RAINBOW_FREQ) == 0) {
         rainbow_angle = (rainbow_angle + 1) % 360;
-        switch (led_state) {
-            case LED_RAINBOW_1:
-                set_leds_colour_by_angle_1(rainbow_angle);
-
-                break;
-            default:
-                set_leds_colour_by_angle_2(rainbow_angle);
-        }
+        set_leds_colour_by_angle(rainbow_angle);
     }
 }
 
@@ -613,6 +605,8 @@ void main(void) {
     set_time_digits(&time);
 
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
+    rainbow_angle = (uint16_t) (DATAEE_ReadByte(DATAEE_LED_COLOUR_FIXED_ANGEL_1) << 8
+            | DATAEE_ReadByte(DATAEE_LED_COLOUR_FIXED_ANGEL_2));
     set_led_state();
 
     alarm_melody = DATAEE_ReadByte(DATAEE_ALARM_MELODY_ADDR);
@@ -629,7 +623,7 @@ void main(void) {
             if (((time.hh == 0 && !time.is_12) || (time.hh == 12 && !time.pm && time.is_12))
                     && time.mm == 0 && time.ss == 0)
                 update_date(&date);
-            if (led_state == LED_RAINBOW_1 || led_state == LED_RAINBOW_2) change_rainbow_colour();
+            if (led_state == LED_RAINBOW) change_rainbow_colour();
             handle_alarm();
             timer_ticked = 0;
         }

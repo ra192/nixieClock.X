@@ -3,6 +3,14 @@
 
 #define send(b) LED_LAT=1; LED_LAT=b; NOP(); LED_LAT=0; NOP(); //3 4 4
 
+typedef struct Colour {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+} Colour;
+
+Colour OFF_COLOUR = {0, 0, 0};
+
 const uint8_t lights[360] = {
     0, 0, 0, 0, 0, 1, 1, 2,
     2, 3, 4, 5, 6, 7, 8, 9,
@@ -112,24 +120,13 @@ void set_leds_colour(Colour* colour) {
     sendRGB(colour);
 }
 
-void set_led_colours(Colour* colour1, Colour* colour2, Colour* colour3, Colour* colour4) {
-    sendRGB(colour1);
-    sendRGB(colour2);
-    sendRGB(colour3);
-    sendRGB(colour4);
+void led_off(void) {
+    set_leds_colour(&OFF_COLOUR);
 }
 
 // sine wave rainbow. See https://www.instructables.com/How-to-Make-Proper-Rainbow-and-Random-Colors-With-/
 
-void set_leds_colour_by_angle_1(uint16_t angle) {
+void set_leds_colour_by_angle(uint16_t angle) {
     Colour colour = {lights[(angle + 120) % 360], lights[angle], lights[(angle + 240) % 360]};
     set_leds_colour(&colour);
-}
-
-void set_leds_colour_by_angle_2(uint16_t angle) {
-    Colour colour1 = {lights[(angle + 120) % 360], lights[angle], lights[(angle + 240) % 360]};
-    Colour colour2 = {lights[(angle + 150) % 360], lights[angle + 30], lights[(angle + 270) % 360]};
-    Colour colour3 = {lights[(angle + 180) % 360], lights[angle + 60], lights[(angle + 300) % 360]};
-    Colour colour4 = {lights[(angle + 210) % 360], lights[angle + 90], lights[(angle + 330) % 360]};
-    set_led_colours(&colour1, &colour2, &colour3, &colour4);
 }
