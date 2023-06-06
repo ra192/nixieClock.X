@@ -21,9 +21,9 @@ void read_bytes(uint8_t start_address, uint8_t* reg_arr, uint8_t length) {
 }
 
 void read_time(Time* time) {
-    uint8_t reg_arr[7];
+    uint8_t reg_arr[3];
 
-    read_bytes(0x00, reg_arr, 7);
+    read_bytes(0x00, reg_arr, 3);
 
     time->ss = (reg_arr[0] >> 4)*10 + (reg_arr[0] & 0x0F);
     time->mm = (reg_arr[1] >> 4)*10 + (reg_arr[1] & 0x0F);
@@ -36,11 +36,17 @@ void read_time(Time* time) {
     } else {
         time->hh = (reg_arr[2] >> 4 & 0x03) * 10 + (reg_arr[2] & 0x0F);
     }
+}
 
-    time->day = reg_arr[3];
-    time->dd = (reg_arr[4] >> 4)*10 + (reg_arr[4] & 0x0F);
-    time->MM = (reg_arr[5] >> 4)*10 + (reg_arr[5] & 0x0F);
-    time->yy = (reg_arr[6] >> 4)*10 + (reg_arr[6] & 0x0F);
+void read_date(Date* date) {
+    uint8_t reg_arr[4];
+
+    read_bytes(0x03, reg_arr, 4);
+
+    date->day = reg_arr[0];
+    date->dd = (reg_arr[1] >> 4)*10 + (reg_arr[1] & 0x0F);
+    date->MM = (reg_arr[2] >> 4)*10 + (reg_arr[2] & 0x0F);
+    date->yy = (reg_arr[3] >> 4)*10 + (reg_arr[3] & 0x0F);
 }
 
 void read_alarm(Alarm* alarm) {
@@ -63,8 +69,16 @@ void read_temp(Temp* temp) {
     temp->fract_part = (reg_arr[1] >> 6) * 25;
 }
 
+void write_bytes(uint8_t start_address, uint8_t* reg_arr, uint8_t length) {
+    i2c_start();
+    i2c_wr(DS3231_ADDRESS);
+    i2c_wr(start_address);
+    i2c_wr_bytes(reg_arr, length);
+    i2c_stop();
+}
+
 void update_time(Time* time) {
-    uint8_t reg_arr[7];
+    uint8_t reg_arr[3];
 
     reg_arr[0] = (uint8_t) (time->ss / 10 << 4 | (time->ss % 10));
     reg_arr[1] = (uint8_t) (time->mm / 10 << 4 | (time->mm % 10));
@@ -75,16 +89,18 @@ void update_time(Time* time) {
         reg_arr[2] = (uint8_t) (time->hh / 10 << 4 | (time->hh % 10));
     }
 
-    reg_arr[3] = time->day;
-    reg_arr[4] = (uint8_t) (time->dd / 10 << 4 | (time->dd % 10));
-    reg_arr[5] = (uint8_t) (time->MM / 10 << 4 | (time->MM % 10));
-    reg_arr[6] = (uint8_t) (time->yy / 10 << 4 | (time->yy % 10));
+    write_bytes(0x00, reg_arr, 3);
+}
 
-    i2c_start();
-    i2c_wr(DS3231_ADDRESS);
-    i2c_wr(0x00);
-    i2c_wr_bytes(reg_arr, 7);
-    i2c_stop();
+void update_date(Date* date) {
+    uint8_t reg_arr[4];
+    
+    reg_arr[0] = date->day;
+    reg_arr[1] = (uint8_t) (date->dd / 10 << 4 | (date->dd % 10));
+    reg_arr[2] = (uint8_t) (date->MM / 10 << 4 | (date->MM % 10));
+    reg_arr[3] = (uint8_t) (date->yy / 10 << 4 | (date->yy % 10));
+    
+    write_bytes(0x03, reg_arr, 4);
 }
 
 void update_alarm(Alarm* alarm, uint8_t is_12) {
@@ -99,13 +115,9 @@ void update_alarm(Alarm* alarm, uint8_t is_12) {
         reg_arr[2] = (uint8_t) (alarm->hh / 10 << 4 | (alarm->hh % 10));
     }
 
-    reg_arr[3] = (uint8_t) (alarm->on << 7 | alarm->dd / 10 <<4 | alarm->dd % 10);
+    reg_arr[3] = (uint8_t) (alarm->on << 7 | alarm->dd / 10 << 4 | alarm->dd % 10);
 
-            i2c_start();
-    i2c_wr(DS3231_ADDRESS);
-    i2c_wr(0x07);
-    i2c_wr_bytes(reg_arr, 4);
-    i2c_stop();
+    write_bytes(0x07, reg_arr, 4);
 }
 
 void increase_hour(uint8_t* hh, uint8_t *pm, uint8_t is_12) {
@@ -251,12 +263,14 @@ void copy_time_fields(Time* src_time, Time* dest_time) {
 
     dest_time->mm = src_time->mm;
     dest_time->ss = src_time->ss;
+}
 
-    dest_time->day = src_time->day;
+void copy_date_fields(Date* src_date, Date* dest_date) {
+    dest_date->day = src_date->day;
 
-    dest_time->dd = src_time->dd;
+    dest_date->dd = src_date->dd;
 
-    dest_time->MM = src_time->MM;
+    dest_date->MM = src_date->MM;
 
-    dest_time->yy = src_time->yy;
+    dest_date->yy = src_date->yy;
 }

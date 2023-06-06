@@ -23,7 +23,9 @@ extern "C" {
         uint8_t mm;
 
         uint8_t ss;
+    } Time;
 
+    typedef struct Date {
         uint8_t day;
 
         uint8_t dd;
@@ -31,8 +33,8 @@ extern "C" {
         uint8_t MM;
 
         uint8_t yy;
-    } Time;
-
+    } Date;
+    
     typedef struct Alarm {
         uint8_t hh;
         uint8_t pm;
@@ -57,9 +59,13 @@ extern "C" {
 
     void read_alarm(Alarm* alarm);
 
+    void read_date(Date* date);
+    
     void read_temp(Temp* temp);
 
     void update_time(Time* time);
+    
+    void update_date(Date* date);
 
     void update_alarm(Alarm* alarm, uint8_t is_12);
 
@@ -88,6 +94,8 @@ extern "C" {
     void toggle_alarm_on_off(uint8_t* on);
 
     void copy_time_fields(Time* src_time, Time* dest_time);
+    
+    void copy_date_fields(Date* src_date, Date* dest_date);
 
 
 #ifdef	__cplusplus

@@ -100,6 +100,9 @@ uint8_t flip_num_arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 Time time;
 Time updated_time;
 
+Date date;
+Date updated_date;
+
 Alarm alarm;
 
 Temp temp;
@@ -140,16 +143,16 @@ void set_time_digits(Time* tm) {
     set_digits(tm->hh / 10, tm->hh % 10, tm->mm / 10, tm->mm % 10);
 }
 
-void set_date_digits(Time* tm) {
-    set_digits(tm->dd / 10, tm->dd % 10, tm->MM / 10, tm->MM % 10);
+void set_date_digits(Date* dt) {
+    set_digits(dt->dd / 10, dt->dd % 10, dt->MM / 10, dt->MM % 10);
 }
 
 void set_temp_digits(Temp* temp) {
     set_digits(temp->int_part / 10, temp->int_part % 10, temp->fract_part / 10, temp->fract_part % 10);
 }
 
-void set_year_digits(Time* tm) {
-    set_digits(tm->yy / 10, tm->yy % 10, 0, 0);
+void set_year_digits(Date* dt) {
+    set_digits(2, 0, dt->yy / 10, dt->yy % 10);
 }
 
 void set_12_24_digits(Time* tm) {
@@ -185,15 +188,15 @@ void flip_date(void) {
                 break;
 
             case 1:
-                set_digits(time.dd / 10, flip_num_arr[i], time.mm / 10, time.mm % 10);
+                set_digits(date.dd / 10, flip_num_arr[i], time.mm / 10, time.mm % 10);
                 break;
 
             case 2:
-                set_digits(time.dd / 10, time.dd % 10, flip_num_arr[i], time.mm % 10);
+                set_digits(date.dd / 10, date.dd % 10, flip_num_arr[i], time.mm % 10);
                 break;
 
             case 3:
-                set_digits(time.dd / 10, time.dd % 10, time.MM / 10, flip_num_arr[i]);
+                set_digits(date.dd / 10, date.dd % 10, date.MM / 10, flip_num_arr[i]);
         }
     }
 }
@@ -289,12 +292,12 @@ void change_rainbow_colour(void) {
 void refresh_dek(void) {
     switch (state) {
         case DISPLAY_DATE:
-        case DISPLAY_TEMP:    
-            if (timer_count % 8 == 0)
+        case DISPLAY_TEMP:
+            if (timer_count % 4 == 0)
                 dek_move_next();
             break;
         default:
-            if (time.ss / 2 != dek_get_cat_num()) {
+            if (time.ss % 30 != dek_get_cat_num()) {
                 dek_move_next();
             }
     }
@@ -308,6 +311,7 @@ void handle_display_time(void) {
         change_led_state();
     } else if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
+        copy_date_fields(&date, &updated_date);
         set_time_digits(&updated_time);
         state = SET_HH;
     } else if (btn3.state == PRESSED) {
@@ -326,13 +330,10 @@ void handle_display_date(void) {
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits(&time);
-    } else if (btn2.state == LONG_PRESSED) {
-        state = SET_ALARM_HH;
-        set_alarm_digits(&alarm);
     } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
     } else if (date_displayed_ticks == TICKS_FREQ) {
-        set_date_digits(&time);
+        set_date_digits(&date);
     }
     date_displayed_ticks++;
 }
@@ -369,8 +370,8 @@ void handle_set_hour(void) {
 
 void handle_set_minute(void) {
     if (btn2.state == PRESSED) {
-        state = SET_DD;
-        set_date_digits(&updated_time);
+        state = SET_12_24;
+        set_12_24_digits(&updated_time);
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_minute(&updated_time.mm);
@@ -385,6 +386,23 @@ void handle_set_minute(void) {
     }
 }
 
+void handle_set_12_24() {
+    if (btn2.state == PRESSED) {
+        update_time(&updated_time);
+        update_alarm(&alarm, updated_time.is_12);
+        copy_time_fields(&updated_time, &time);
+        set_date_digits(&updated_date);
+        state = SET_DD;
+    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
+
+        toggle_12_24(&updated_time.hh, &updated_time.pm, &alarm.hh, &alarm.pm, &updated_time.is_12);
+        set_12_24_digits(&updated_time);
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
+    }
+}
+
 void handle_set_day(void) {
     if (btn2.state == PRESSED) {
         state = SET_MONTH;
@@ -392,12 +410,12 @@ void handle_set_day(void) {
     } else {
         if (btn1.state == PRESSED
                 || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            decrease_date(&updated_time.dd, updated_time.MM);
-            set_date_digits(&updated_time);
+            decrease_date(&updated_date.dd, updated_date.MM);
+            set_date_digits(&updated_date);
         } else if (btn3.state == PRESSED
                 || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            increase_date(&updated_time.dd, updated_time.dd);
-            set_date_digits(&updated_time);
+            increase_date(&updated_date.dd, updated_date.dd);
+            set_date_digits(&updated_date);
         }
     }
     if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
@@ -408,16 +426,16 @@ void handle_set_day(void) {
 
 void handle_set_month(void) {
     if (btn2.state == PRESSED) {
-        set_year_digits(&updated_time);
+        set_year_digits(&updated_date);
         state = SET_YY;
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_month(&updated_time.MM);
-        set_date_digits(&updated_time);
+        decrease_month(&updated_date.MM);
+        set_date_digits(&updated_date);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_month(&updated_time.MM);
-        set_date_digits(&updated_time);
+        increase_month(&updated_date.MM);
+        set_date_digits(&updated_date);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(2);
         toggle_digit_displayed(3);
@@ -426,33 +444,18 @@ void handle_set_month(void) {
 
 void handle_set_year(void) {
     if (btn2.state == PRESSED) {
-        set_12_24_digits(&updated_time);
-        state = SET_12_24;
+        update_date(&updated_date);
+        copy_date_fields(&updated_date, &date);
+        set_alarm_digits(&alarm);
+        state = SET_ALARM_HH;
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        decrease_year(&updated_time.yy);
-        set_year_digits(&updated_time);
+        decrease_year(&updated_date.yy);
+        set_year_digits(&updated_date);
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-        increase_year(&updated_time.yy);
-        set_year_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
-    }
-}
-
-void handle_set_12_24() {
-    if (btn2.state == PRESSED) {
-        update_time(&updated_time);
-        update_alarm(&alarm, updated_time.is_12);
-        copy_time_fields(&updated_time, &time);
-        set_time_digits(&time);
-        state = DISPLAY_TIME;
-    } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
-
-        toggle_12_24(&updated_time.hh, &updated_time.pm, &alarm.hh, &alarm.pm, &updated_time.is_12);
-        set_12_24_digits(&updated_time);
+        increase_year(&updated_date.yy);
+        set_year_digits(&updated_date);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
@@ -607,6 +610,7 @@ void main(void) {
     //INTERRUPT_PeripheralInterruptDisable();
 
     read_time(&time);
+    read_date(&date);
     read_alarm(&alarm);
 
     set_time_digits(&time);
@@ -625,6 +629,9 @@ void main(void) {
             if (timer_count == 0) {
                 read_time(&time);
             }
+            if (((time.hh == 0 && !time.is_12) || (time.hh == 12 && !time.pm && time.is_12))
+                    && time.mm == 0 && time.ss == 0)
+                update_date(&date);
             if (led_state == LED_RAINBOW_1 || led_state == LED_RAINBOW_2) change_rainbow_colour();
             handle_alarm();
             timer_ticked = 0;
