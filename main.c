@@ -199,19 +199,15 @@ void flip_time(void) {
 }
 
 void flip_date(void) {
-    flip_seq(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date.MM % 10);
+    flip_seq(date.dd / 10, date.dd % 10, date.MM / 10, date.MM % 10);
 }
 
 void flip_year(void) {
-    flip_seq(date.dd / 10, date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, date.yy % 10);
+    flip_seq(2, 0, date.yy / 10, date.yy % 10);
 }
 
 void shift_temp(void) {
-    shift(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
-}
-
-void shift_temp_from_year(void) {
-    shift(2, 0, date.yy / 10, date.yy % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
+    shift(temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
 }
 
 void set_led_state(void) {
@@ -319,7 +315,7 @@ void handle_display_year(void) {
         set_time_digits();
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         if (display_mode == TIME_DATE_AND_TEMP) {
-            shift_temp_from_year();
+            shift_temp();
         } else {
             state = DISPLAY_TIME;
             set_time_digits();

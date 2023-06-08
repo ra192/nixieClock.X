@@ -24,9 +24,9 @@ extern "C" {
     
     void flip_all(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
 
-    void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7);
+    void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
     
-    void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7);
+    void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
 
 #ifdef	__cplusplus
 }
