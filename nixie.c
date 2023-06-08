@@ -1,6 +1,14 @@
 #include "nixie.h"
 #include "settings.h"
 
+typedef enum DisplayEffect {
+        NONE,
+        TOGGLE,        
+        FLIP_ALL,
+        FLIP_SEQ,
+        SHIFT        
+    } DisplayEffect;
+
 const uint8_t decoder_arr[] = {
     0b00000000, 0b00000010, 0b00000101, 0b00000111, 0b00000011,
     0b00001001, 0b00000110, 0b00001000, 0b00000100, 0b00000001
