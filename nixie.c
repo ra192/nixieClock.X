@@ -1,4 +1,5 @@
 #include "nixie.h"
+#include "settings.h"
 
 const uint8_t decoder_arr[] = {
     0b00000000, 0b00000010, 0b00000101, 0b00000111, 0b00000011,
@@ -13,13 +14,35 @@ uint8_t digit_displayed[DIGITS_SIZE];
 uint8_t current = 0;
 uint8_t is_on = 0;
 
-void set_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
+DisplayEffect effect;
+uint16_t effect_ticks;
+uint8_t digit_toggled[DIGITS_SIZE];
+uint8_t saved_digit_values[DIGITS_SIZE * 2];
+
+void copy_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
     digit_values[0] = dig0;
     digit_values[1] = dig1;
     digit_values[2] = dig2;
     digit_values[3] = dig3;
+}
 
-    set_digit_displayed_all();
+void copy_digit_toggled(uint8_t dig0_toggled, uint8_t dig1_toggled, uint8_t dig2_toggled, uint8_t dig3_toggled) {
+    digit_toggled[0] = dig0_toggled;
+    digit_toggled[1] = dig1_toggled;
+    digit_toggled[2] = dig2_toggled;
+    digit_toggled[3] = dig3_toggled;
+}
+
+void copy_saved_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4,
+        uint8_t dig5, uint8_t dig6, uint8_t dig7) {
+    saved_digit_values[0] = dig0;
+    saved_digit_values[1] = dig1;
+    saved_digit_values[2] = dig2;
+    saved_digit_values[3] = dig3;
+    saved_digit_values[4] = dig4;
+    saved_digit_values[5] = dig5;
+    saved_digit_values[6] = dig6;
+    saved_digit_values[7] = dig7;
 }
 
 void set_digit_displayed(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
@@ -31,6 +54,12 @@ void set_digit_displayed(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3)
 
 void set_digit_displayed_all(void) {
     set_digit_displayed(1, 1, 1, 1);
+}
+
+void set_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
+    copy_digits(dig0, dig1, dig2, dig3);
+    set_digit_displayed_all();
+    effect = NONE;
 }
 
 void toggle_digit_displayed(uint8_t number) {
@@ -61,6 +90,91 @@ void off_digits(void) {
 }
 
 void refresh_digits(void) {
+    if (effect == TOGGLE) {
+        if (effect_ticks < TICKS_FREQ / 2 - 1)
+            effect_ticks++;
+        else {
+            for (uint8_t i = 0; i < DIGITS_SIZE; i++)
+                if (digit_toggled[i]) toggle_digit_displayed(i);
+            effect_ticks = 0;
+        }
+    }
+
+    if (effect == FLIP_ALL) {
+        if (effect_ticks < TICKS_FREQ) {
+            if (effect_ticks % 10 == 0) {
+                uint8_t i = (effect_ticks % 100) / 10;
+                copy_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
+            }
+            effect_ticks++;
+        } else {
+            copy_digits(saved_digit_values[0], saved_digit_values[1], saved_digit_values[2], saved_digit_values[3]);
+            effect = NONE;
+        }
+    }
+
+    if (effect == FLIP_SEQ) {
+        if (effect_ticks < TICKS_FREQ) {
+            if (effect_ticks % 10 == 0) {
+                uint8_t dig_num = (uint8_t) (effect_ticks / 100);
+                uint8_t i = (effect_ticks % 100) / 10;
+                switch (dig_num) {
+                    case 0:
+                        copy_digits(flip_num_arr[i], saved_digit_values[1], saved_digit_values[2], saved_digit_values[3]);
+                        break;
+
+                    case 1:
+                        copy_digits(saved_digit_values[4], flip_num_arr[i], saved_digit_values[2], saved_digit_values[3]);
+                        break;
+
+                    case 2:
+                        copy_digits(saved_digit_values[4], saved_digit_values[5], flip_num_arr[i], saved_digit_values[3]);
+                        break;
+
+                    case 3:
+                        copy_digits(saved_digit_values[4], saved_digit_values[5], saved_digit_values[6], flip_num_arr[i]);
+                }
+            }
+            effect_ticks++;
+        } else {
+            copy_digits(saved_digit_values[4], saved_digit_values[5], saved_digit_values[6], saved_digit_values[7]);
+            effect = NONE;
+        }
+    }
+
+    if (effect == SHIFT) {
+        if (effect_ticks < TICKS_FREQ) {
+            if (effect_ticks % 80 == 0) {
+                switch (effect_ticks / 80) {
+                    case 0:
+                        copy_digits(saved_digit_values[0], saved_digit_values[1], saved_digit_values[2], 0);
+                        set_digit_displayed(1, 1, 1, 0);
+                        break;
+                    case 1:
+                        copy_digits(saved_digit_values[1], saved_digit_values[2], 0, 0);
+                        set_digit_displayed(1, 1, 0, 0);
+                        break;
+                    case 2:
+                        copy_digits(saved_digit_values[2], 0, 0, saved_digit_values[4]);
+                        set_digit_displayed(1, 0, 0, 1);
+                        break;
+                    case 3:
+                        copy_digits(0, 0, saved_digit_values[4], saved_digit_values[5]);
+                        set_digit_displayed(0, 0, 1, 1);
+                        break;
+                    default:
+                        copy_digits(0, saved_digit_values[4], saved_digit_values[5], saved_digit_values[6]);
+                        set_digit_displayed(0, 1, 1, 1);
+                }
+            }
+            effect_ticks++;
+        } else {
+            copy_digits(saved_digit_values[4], saved_digit_values[5], saved_digit_values[6], saved_digit_values[7]);
+            set_digit_displayed_all();
+            effect = NONE;
+        }
+    }
+
     if (is_on) {
         off_digits();
         is_on = 0;
@@ -71,58 +185,31 @@ void refresh_digits(void) {
     }
 }
 
-void flip_all(uint16_t timer_count) {
-    if (timer_count % 10 == 0) {
-        uint8_t i = (timer_count % 100) / 10;
-        set_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
-    }
+void toggle(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig0_toggled, uint8_t dig1_toggled, uint8_t dig2_toggled, uint8_t dig3_toggled) {
+    effect = TOGGLE;
+    copy_digits(dig0, dig1, dig2, dig3);
+    copy_digit_toggled(dig0_toggled, dig1_toggled, dig2_toggled, dig3_toggled);
+    effect_ticks = 0;
+    set_digit_displayed_all();
 }
 
-void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint16_t timer_count) {
-    if (timer_count % 10 == 0) {
-        uint8_t dig_num = (uint8_t) (timer_count / 100);
-        uint8_t i = (timer_count % 100) / 10;
-        switch (dig_num) {
-            case 0:
-                set_digits(flip_num_arr[i], dig0, dig1, dig2);
-                break;
-
-            case 1:
-                set_digits(dig3, flip_num_arr[i], dig1, dig2);
-                break;
-
-            case 2:
-                set_digits(dig3, dig4, flip_num_arr[i], dig2);
-                break;
-
-            case 3:
-                set_digits(dig3, dig4, dig5, flip_num_arr[i]);
-        }
-    }
+void flip_all(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
+    effect = FLIP_ALL;
+    copy_saved_digits(dig0, dig1, dig2, dig3, 0, 0, 0, 0);
+    effect_ticks = 0;
+    set_digit_displayed_all();
 }
 
-void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint16_t timer_count) {
-    if (timer_count % 80 == 0) {
-        switch (timer_count / 80) {
-            case 0:
-                set_digits(dig0, dig1, dig2, 0);
-                set_digit_displayed(1, 1, 1, 0);
-                break;
-            case 1:
-                set_digits(dig1, dig2, 0, 0);
-                set_digit_displayed(1, 1, 0, 0);
-                break;
-            case 2:
-                set_digits(dig2, 0, 0, dig3);
-                set_digit_displayed(1, 0, 0, 1);
-                break;
-            case 3:
-                set_digits(0, 0, dig3, dig4);
-                set_digit_displayed(0, 0, 1, 1);
-                break;
-            default:
-                set_digits(0, dig3, dig4, dig5);
-                set_digit_displayed(0, 1, 1, 1);
-        }
-    }
+void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7) {
+    effect = FLIP_SEQ;
+    copy_saved_digits(dig0, dig1, dig2, dig3, dig4, dig5, dig6, dig7);
+    effect_ticks = 0;
+    set_digit_displayed_all();
+}
+
+void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7) {
+    effect = SHIFT;
+    copy_saved_digits(dig0, dig1, dig2, dig3, dig4, dig5, dig6, dig7);
+    effect_ticks = 0;
+    set_digit_displayed_all();
 }

@@ -42,14 +42,13 @@
  */
 
 #include "mcc_generated_files/mcc.h"
+#include "settings.h"
 #include "time.h"
 #include "nixie.h"
 #include "button.h"
 #include "neopixel.h"
 #include "dekatron.h"
 #include "buzzer.h"
-
-#define TICKS_FREQ 400
 
 #define DISPLAY_DATE_DURATION 5 * TICKS_FREQ
 #define DISPLAY_TEMP_DURATION 5 * TICKS_FREQ
@@ -70,6 +69,7 @@
 typedef enum State {
     DISPLAY_TIME,
     DISPLAY_DATE,
+    DISPLAY_YEAR,
     DISPLAY_TEMP,
     SET_HH,
     SET_MM,
@@ -115,8 +115,7 @@ Button btn3;
 
 State state = DISPLAY_TIME;
 
-uint16_t date_displayed_ticks;
-uint16_t temp_displayed_ticks;
+uint16_t displayed_ticks;
 
 DisplayMode display_mode;
 
@@ -143,52 +142,76 @@ void read_buttons() {
     read_button(&btn3, BTN_3_GetValue());
 }
 
-void set_time_digits(Time* tm) {
-    set_digits(tm->hh / 10, tm->hh % 10, tm->mm / 10, tm->mm % 10);
+void set_time_digits() {
+    set_digits(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10);
 }
 
-void set_date_digits(Date* dt) {
-    set_digits(dt->dd / 10, dt->dd % 10, dt->MM / 10, dt->MM % 10);
+void set_hh_digits() {
+    toggle(updated_time.hh / 10, updated_time.hh % 10, updated_time.mm / 10, updated_time.mm % 10, 1, 1, 0, 0);
 }
 
-void set_temp_digits(Temp* temp) {
-    set_digits(temp->int_part / 10, temp->int_part % 10, temp->fract_part / 10, temp->fract_part % 10);
+void set_mm_digits() {
+    toggle(updated_time.hh / 10, updated_time.hh % 10, updated_time.mm / 10, updated_time.mm % 10, 0, 0, 1, 1);
 }
 
-void set_year_digits(Date* dt) {
-    set_digits(2, 0, dt->yy / 10, dt->yy % 10);
+void set_dd_digits() {
+    toggle(updated_date.dd / 10, updated_date.dd % 10, updated_date.MM / 10, updated_date.MM % 10, 1, 1, 0, 0);
 }
 
-void set_12_24_digits(Time* tm) {
-    if (tm->is_12) {
-        set_digits(1, 2, 0, 0);
+void set_MM_digits() {
+    toggle(updated_date.dd / 10, updated_date.dd % 10, updated_date.MM / 10, updated_date.MM % 10, 0, 0, 1, 1);
+}
+
+void set_yy_digits() {
+    toggle(2, 0, updated_date.yy / 10, updated_date.yy % 10, 0, 0, 1, 1);
+}
+
+void set_12_24_digits() {
+    if (updated_time.is_12) {
+        toggle(1, 2, 0, 0, 1, 1, 0, 0);
     } else {
-        set_digits(2, 4, 0, 0);
+        toggle(2, 4, 0, 0, 1, 1, 0, 0);
     }
 }
 
-void set_display_mode_digits(uint8_t display_mode) {
-    set_digits(0, display_mode, 0, 0);
+void set_display_mode_digits() {
+    toggle(0, display_mode, 0, 0, 1, 1, 0, 0);
 }
 
-void set_alarm_digits(Alarm* alarm) {
-    set_digits(alarm->hh / 10, alarm->hh % 10, alarm->mm / 10, alarm->mm % 10);
+void set_alarm_hh_digits() {
+    toggle(alarm.hh / 10, alarm.hh % 10, alarm.mm / 10, alarm.mm % 10, 1, 1, 0, 0);
 }
 
-void set_alarm_on_off_and_melody_digits(Alarm* alarm, uint8_t alarm_melody) {
-    set_digits(0, alarm->on, 0, alarm_melody);
+void set_alarm_mm_digits() {
+    toggle(alarm.hh / 10, alarm.hh % 10, alarm.mm / 10, alarm.mm % 10, 0, 0, 1, 1);
+}
+
+void set_alarm_on_off_digits() {
+    toggle(0, alarm.on, 0, alarm_melody, 1, 1, 0, 0);
+}
+
+void set_alarm_melody_digits() {
+    toggle(0, alarm.on, 0, alarm_melody, 0, 0, 1, 1);
+}
+
+void flip_time(void) {
+    flip_all(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10);
 }
 
 void flip_date(void) {
-    flip_seq(time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date_displayed_ticks);
+    flip_seq(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date.MM % 10);
 }
 
-void flip_year(uint16_t ticks) {
-    flip_seq(date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, ticks);
+void flip_year(void) {
+    flip_seq(date.dd / 10, date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, date.yy % 10);
 }
 
 void shift_temp(void) {
-    shift(time.hh % 10, time.mm / 10, time.mm % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp_displayed_ticks);
+    shift(time.hh / 10, time.hh % 10, time.mm / 10, time.mm % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
+}
+
+void shift_temp_from_year(void) {
+    shift(2, 0, date.yy / 10, date.yy % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
 }
 
 void set_led_state(void) {
@@ -233,6 +256,7 @@ void change_rainbow_colour(void) {
 void refresh_dek(void) {
     switch (state) {
         case DISPLAY_DATE:
+        case DISPLAY_YEAR:
         case DISPLAY_TEMP:
             if (timer_count % 4 == 0)
                 dek_move_next();
@@ -247,107 +271,98 @@ void refresh_dek(void) {
 
 void handle_display_time(void) {
     if (btn1.state == PRESSED) {
-        date_displayed_ticks = 0;
+        displayed_ticks = 0;
         state = DISPLAY_DATE;
+        flip_date();
     } else if (btn2.state == PRESSED) {
         change_led_state();
     } else if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
         copy_date_fields(&date, &updated_date);
-        set_time_digits(&updated_time);
+        set_hh_digits();
         state = SET_HH;
     } else if (btn3.state == PRESSED) {
         read_temp(&temp);
-        set_temp_digits(&temp);
-        temp_displayed_ticks = 0;
+        shift_temp();
+        displayed_ticks = 0;
         state = DISPLAY_TEMP;
-    } else if (time.mm % 5 == 0 && time.ss == 30) {
+    } else if (time.mm % 5 == 0 && time.ss == 0) {
         switch (display_mode) {
             case TIME_AND_DATE:
             case TIME_DATE_AND_TEMP:
-                date_displayed_ticks = 0;
+                displayed_ticks = 0;
                 state = DISPLAY_DATE;
                 break;
             default:
-                flip_all(timer_count);
+                flip_time();
         }
-
     } else if (timer_count == 0) {
-        set_time_digits(&time);
+        set_time_digits();
     }
 }
 
 void handle_display_date(void) {
-    if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
+    if (btn1.state == PRESSED) {
+        state = DISPLAY_TIME;
+        set_time_digits();
+    } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
+        state = DISPLAY_YEAR;
+        flip_year();
+        displayed_ticks = 0;
+    }
+    displayed_ticks++;
+}
+
+void handle_display_year(void) {
+    if (btn1.state == PRESSED) {
+        state = DISPLAY_TIME;
+        set_time_digits();
+    } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         if (display_mode == TIME_DATE_AND_TEMP) {
-            state = DISPLAY_TEMP;
-            temp_displayed_ticks = 0;
+            shift_temp_from_year();
         } else {
             state = DISPLAY_TIME;
-            set_time_digits(&time);
+            set_time_digits();
         }
-    } else if (date_displayed_ticks < TICKS_FREQ) {
-        flip_date();
-    } else if (date_displayed_ticks == TICKS_FREQ) {
-        set_date_digits(&date);
-    } else if (date_displayed_ticks >= DISPLAY_DATE_DURATION / 2
-            && date_displayed_ticks < DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
-        uint16_t year_ticks = date_displayed_ticks - DISPLAY_DATE_DURATION / 2;
-        flip_year(year_ticks);
-    } else if (date_displayed_ticks == DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
-        set_year_digits(&date);
     }
-    date_displayed_ticks++;
+    displayed_ticks++;
 }
 
 void handle_display_temp(void) {
-    if (btn3.state == PRESSED || temp_displayed_ticks == DISPLAY_TEMP_DURATION) {
+    if (btn3.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
-        set_time_digits(&time);
-    } else if (temp_displayed_ticks < TICKS_FREQ) {
-        shift_temp();
-    } else if (temp_displayed_ticks == TICKS_FREQ) {
-
-        set_temp_digits(&temp);
+        set_time_digits();
     }
-    temp_displayed_ticks++;
+    displayed_ticks++;
 }
 
 void handle_set_hour(void) {
     if (btn2.state == PRESSED) {
         state = SET_MM;
-        set_digit_displayed_all();
+        set_mm_digits();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
-        set_time_digits(&updated_time);
+        set_hh_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
-        set_time_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_hh_digits();
     }
 }
 
 void handle_set_minute(void) {
     if (btn2.state == PRESSED) {
         state = SET_12_24;
-        set_12_24_digits(&updated_time);
+        set_12_24_digits();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_minute(&updated_time.mm);
-        set_time_digits(&updated_time);
+        set_mm_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_minute(&updated_time.mm);
-        set_time_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(2);
-        toggle_digit_displayed(3);
+        set_mm_digits();
     }
 }
 
@@ -356,57 +371,41 @@ void handle_set_12_24() {
         update_time(&updated_time);
         update_alarm(&alarm, updated_time.is_12);
         copy_time_fields(&updated_time, &time);
-        set_date_digits(&updated_date);
+        set_dd_digits();
         state = SET_DD;
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
-
         toggle_12_24(&updated_time.hh, &updated_time.pm, &alarm.hh, &alarm.pm, &updated_time.is_12);
-        set_12_24_digits(&updated_time);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_12_24_digits();
     }
 }
 
 void handle_set_day(void) {
     if (btn2.state == PRESSED) {
         state = SET_MONTH;
-        set_digit_displayed_all();
-    } else {
-        if (btn1.state == PRESSED
-                || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            decrease_date(&updated_date.dd, updated_date.MM);
-            set_date_digits(&updated_date);
-        } else if (btn3.state == PRESSED
-                || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
-            increase_date(&updated_date.dd, updated_date.dd);
-            set_date_digits(&updated_date);
-        }
-    }
-    if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_MM_digits();
+    } else if (btn1.state == PRESSED
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        decrease_date(&updated_date.dd, updated_date.MM);
+        set_dd_digits();
+    } else if (btn3.state == PRESSED
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+        increase_date(&updated_date.dd, updated_date.dd);
+        set_dd_digits();
     }
 }
 
 void handle_set_month(void) {
     if (btn2.state == PRESSED) {
-        set_year_digits(&updated_date);
+        set_yy_digits();
         state = SET_YY;
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_month(&updated_date.MM);
-        set_date_digits(&updated_date);
+        set_MM_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_month(&updated_date.MM);
-        set_date_digits(&updated_date);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(2);
-        toggle_digit_displayed(3);
+        set_MM_digits();
     }
 }
 
@@ -415,18 +414,15 @@ void handle_set_year(void) {
         update_date(&updated_date);
         copy_date_fields(&updated_date, &date);
         state = SET_DISPLAY_MODE;
-        set_display_mode_digits(display_mode);
+        set_display_mode_digits();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_year(&updated_date.yy);
-        set_year_digits(&updated_date);
+        set_yy_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_year(&updated_date.yy);
-        set_year_digits(&updated_date);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_yy_digits();
     }
 }
 
@@ -434,73 +430,59 @@ void handle_set_display_mode(void) {
     if (btn2.state == PRESSED) {
         DATAEE_WriteByte(DATAEE_DISPLAY_MODE_ADDR, display_mode);
         state = SET_ALARM_HH;
-        set_alarm_digits(&alarm);
+        set_alarm_hh_digits();
     } else if (btn1.state == PRESSED) {
         if (display_mode > 0)
             display_mode--;
         else
             display_mode = TIME_DATE_AND_TEMP;
-        set_display_mode_digits(display_mode);
+        set_display_mode_digits();
     } else if (btn3.state == PRESSED) {
         if (display_mode < TIME_DATE_AND_TEMP)
             display_mode++;
         else
             display_mode = TIME_ONLY;
-        set_display_mode_digits(display_mode);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_display_mode_digits();
     }
 }
 
 void handle_set_alarm_hour(void) {
     if (btn2.state == PRESSED) {
         state = SET_ALARM_MM;
-        set_digit_displayed_all();
+        set_alarm_mm_digits();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_hour(&alarm.hh, &alarm.pm, time.is_12);
-        set_alarm_digits(&alarm);
+        set_alarm_hh_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_hour(&alarm.hh, &alarm.pm, time.is_12);
-        set_alarm_digits(&alarm);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_alarm_hh_digits();
     }
 }
 
 void handle_set_alarm_minute(void) {
     if (btn2.state == PRESSED) {
         state = SET_ALARM_ON_OFF;
-        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
+        set_alarm_on_off_digits();
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_minute(&alarm.mm);
-        set_alarm_digits(&alarm);
+        set_alarm_mm_digits();
     } else if (btn3.state == PRESSED
             || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         increase_minute(&alarm.mm);
-        set_alarm_digits(&alarm);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(2);
-        toggle_digit_displayed(3);
+        set_alarm_mm_digits();
     }
 }
 
 void handle_set_alarm_on_off(void) {
     if (btn2.state == PRESSED) {
         state = SET_ALARM_MELODY;
-        set_digit_displayed_all();
+        set_alarm_melody_digits();
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
         toggle_alarm_on_off(&alarm.on);
-        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(0);
-        toggle_digit_displayed(1);
+        set_alarm_on_off_digits();
     }
 }
 
@@ -509,20 +491,16 @@ void handle_set_alarm_melody(void) {
         update_alarm(&alarm, time.is_12);
         DATAEE_WriteByte(DATAEE_ALARM_MELODY_ADDR, alarm_melody);
         state = DISPLAY_TIME;
-        set_time_digits(&time);
+        set_time_digits();
     } else if (btn1.state == PRESSED) {
         if (alarm_melody > 0)
             alarm_melody--;
         else
             alarm_melody = MELODY_COUNT - 1;
-        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
+        set_alarm_melody_digits();
     } else if (btn3.state == PRESSED) {
         alarm_melody = (alarm_melody + 1) % MELODY_COUNT;
-        set_alarm_on_off_and_melody_digits(&alarm, alarm_melody);
-    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
-        toggle_digit_displayed(2);
-        toggle_digit_displayed(3);
+        set_alarm_melody_digits();
     }
 }
 
@@ -545,6 +523,9 @@ void handle_state(void) {
             break;
         case DISPLAY_DATE:
             handle_display_date();
+            break;
+        case DISPLAY_YEAR:
+            handle_display_year();
             break;
         case DISPLAY_TEMP:
             handle_display_temp();
@@ -612,7 +593,7 @@ void main(void) {
     read_date(&date);
     read_alarm(&alarm);
 
-    set_time_digits(&time);
+    set_time_digits();
 
     display_mode = DATAEE_ReadByte(DATAEE_DISPLAY_MODE_ADDR);
     if (display_mode > TIME_DATE_AND_TEMP) display_mode = TIME_ONLY;

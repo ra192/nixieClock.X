@@ -25,6 +25,7 @@
       <itemPath>neopixel.h</itemPath>
       <itemPath>dekatron.h</itemPath>
       <itemPath>buzzer.h</itemPath>
+      <itemPath>settings.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"

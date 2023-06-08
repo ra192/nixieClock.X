@@ -16,23 +16,25 @@ extern "C" {
 
 #define DIGITS_SIZE 4       
 
+    typedef enum DisplayEffect {
+        NONE,
+        TOGGLE,        
+        FLIP_ALL,
+        FLIP_SEQ,
+        SHIFT        
+    } DisplayEffect;
+    
     void set_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
-
-    void set_digit_displayed(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
-
-    void set_digit_displayed_all(void);
-
-    void toggle_digit_displayed(uint8_t number);
 
     void refresh_digits(void);
 
-    void off_digits(void);
-
-    void flip_all(uint16_t timer_count);
-
-    void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint16_t timer_count);
+    void toggle(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig0_toggled, uint8_t dig1_toggled, uint8_t dig2_toggled, uint8_t dig3_toggled);
     
-    void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint16_t timer_count);
+    void flip_all(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
+
+    void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7);
+    
+    void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig4, uint8_t dig5, uint8_t dig6, uint8_t dig7);
 
 #ifdef	__cplusplus
 }
