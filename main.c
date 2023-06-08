@@ -183,8 +183,8 @@ void flip_date(void) {
     flip_seq(time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date_displayed_ticks);
 }
 
-void flip_year(void) {
-    flip_seq(date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, date_displayed_ticks % 400);
+void flip_year(uint16_t ticks) {
+    flip_seq(date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, ticks);
 }
 
 void shift_temp(void) {
@@ -292,7 +292,8 @@ void handle_display_date(void) {
         set_date_digits(&date);
     } else if (date_displayed_ticks >= DISPLAY_DATE_DURATION / 2
             && date_displayed_ticks < DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
-        flip_year();
+        uint16_t year_ticks = date_displayed_ticks - DISPLAY_DATE_DURATION / 2;
+        flip_year(year_ticks);
     } else if (date_displayed_ticks == DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
         set_year_digits(&date);
     }
