@@ -125,6 +125,8 @@ uint16_t rainbow_angle;
 
 uint8_t alarm_melody;
 
+DekMode dek_mode;
+
 void change_rainbow_colour(void);
 
 void tmr1_ISR(void) {
@@ -249,27 +251,12 @@ void change_rainbow_colour(void) {
     }
 }
 
-void refresh_dek(void) {
-    switch (state) {
-        case DISPLAY_DATE:
-        case DISPLAY_YEAR:
-        case DISPLAY_TEMP:
-            if (timer_count % 4 == 0)
-                dek_move_next();
-            break;
-        default:
-            if (time.ss % 30 != dek_get_cat_num()) {
-
-                dek_move_next();
-            }
-    }
-}
-
 void handle_display_time(void) {
     if (btn1.state == PRESSED) {
         displayed_ticks = 0;
         state = DISPLAY_DATE;
         flip_date();
+        dek_set_mode(SPIN_CW);
     } else if (btn2.state == PRESSED) {
         change_led_state();
     } else if (btn2.state == LONG_PRESSED) {
@@ -282,18 +269,22 @@ void handle_display_time(void) {
         shift_temp();
         displayed_ticks = 0;
         state = DISPLAY_TEMP;
+        dek_set_mode(SPIN_CCW);
     } else if (time.mm % 5 == 0 && time.ss == 0) {
         switch (display_mode) {
             case TIME_AND_DATE:
             case TIME_DATE_AND_TEMP:
                 displayed_ticks = 0;
                 state = DISPLAY_DATE;
+                flip_date();
+                dek_set_mode(SPIN_CW);
                 break;
             default:
                 flip_time();
         }
     } else if (timer_count == 0) {
         set_time_digits();
+        dek_set_val(time.ss % 30);
     }
 }
 
@@ -301,6 +292,7 @@ void handle_display_date(void) {
     if (btn1.state == PRESSED) {
         state = DISPLAY_TIME;
         set_time_digits();
+        dek_set_mode(dek_mode);
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_YEAR;
         flip_year();
@@ -313,12 +305,15 @@ void handle_display_year(void) {
     if (btn1.state == PRESSED) {
         state = DISPLAY_TIME;
         set_time_digits();
+        dek_set_mode(dek_mode);
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         if (display_mode == TIME_DATE_AND_TEMP) {
             shift_temp();
+            dek_set_mode(SPIN_CCW);
         } else {
             state = DISPLAY_TIME;
             set_time_digits();
+            dek_set_mode(dek_mode);
         }
     }
     displayed_ticks++;
@@ -328,6 +323,7 @@ void handle_display_temp(void) {
     if (btn3.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits();
+        dek_set_mode(dek_mode);
     }
     displayed_ticks++;
 }
@@ -488,6 +484,7 @@ void handle_set_alarm_melody(void) {
         DATAEE_WriteByte(DATAEE_ALARM_MELODY_ADDR, alarm_melody);
         state = DISPLAY_TIME;
         set_time_digits();
+        dek_set_mode(dek_mode);
     } else if (btn1.state == PRESSED) {
         if (alarm_melody > 0)
             alarm_melody--;
@@ -605,6 +602,9 @@ void main(void) {
     alarm_melody = DATAEE_ReadByte(DATAEE_ALARM_MELODY_ADDR);
     if (alarm_melody > MELODY_COUNT - 1) alarm_melody = 0;
 
+    dek_mode = DISPLAY_VAL;
+    dek_set_mode(dek_mode);
+    
     while (1) {
         if (timer_ticked) {
             refresh_digits();

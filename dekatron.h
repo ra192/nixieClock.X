@@ -14,11 +14,20 @@ extern "C" {
 
 #include <xc.h>
 
-    void dek_set_zero(void);
+    typedef enum DekMode {
+        DISPLAY_VAL,
+        SPIN_CW,
+        SPIN_CCW,
+        FILL        
+    } DekMode;
 
-    void dek_move_next(void);
+    void dek_set_val(uint8_t disp_val);
     
-    uint8_t dek_get_cat_num(void);
+    void dek_set_mode(DekMode mod);
+
+    void refresh_dek(void);
+    
+    
 
 #ifdef	__cplusplus
 }

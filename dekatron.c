@@ -5,19 +5,18 @@
 #define CATHODES_COUNT 30
 
 uint8_t cat_num = 0;
+uint8_t val;
 
-void dek_set_zero(void) {
-    CAT_0_SetHigh();
-    CAT_SetLow();
-    CAT_1_SetLow();
-    CAT_2_SetLow();
-    cat_num = 0;
-}
+uint8_t ticks = 0;
 
-void dek_move_next(void) {
-    cat_num = (cat_num + 1) % CATHODES_COUNT;
+DekMode mode = DISPLAY_VAL;
+
+void change_cat() {
     if (cat_num == 0) {
-        dek_set_zero();
+        CAT_0_SetHigh();
+        CAT_SetLow();
+        CAT_1_SetLow();
+        CAT_2_SetLow();
     } else {
         uint8_t cat_pins = (uint8_t) (1 << cat_num % 3);
         CAT_0_LAT = 0;
@@ -27,6 +26,50 @@ void dek_move_next(void) {
     }
 }
 
-uint8_t dek_get_cat_num(void) {
-    return cat_num;
+void move_next(void) {
+    cat_num = (cat_num + 1) % CATHODES_COUNT;
+    change_cat();
+}
+
+void move_prev(void) {
+    if (cat_num > 0)
+        cat_num--;
+    else
+        cat_num = CATHODES_COUNT - 1;
+
+    change_cat();
+}
+
+void dek_set_val(uint8_t disp_val) {
+    val = disp_val % CATHODES_COUNT;
+}
+
+void dek_set_mode(DekMode mod) {
+    mode = mod;
+    if (mode == SPIN_CW || mode == SPIN_CCW)
+        ticks = 0;
+}
+
+void refresh_dek(void) {
+    switch (mode) {
+        case SPIN_CW:
+            if (ticks == 0) move_next();
+            ticks = (ticks + 1) % 4;
+            break;
+        case SPIN_CCW:
+            if (ticks == 0) move_prev();
+            ticks = (ticks + 1) % 4;
+            break;
+        case FILL:
+            if (cat_num < val)
+                move_next();
+            else {
+                cat_num = 0;
+                change_cat();
+            }
+            break;
+        default:
+            if (cat_num != val)
+                move_next();
+    }
 }
