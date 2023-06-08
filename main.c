@@ -183,6 +183,10 @@ void flip_date(void) {
     flip_seq(time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date_displayed_ticks);
 }
 
+void flip_year(void) {
+    flip_seq(date.dd % 10, date.MM / 10, date.MM % 10, 2, 0, date.yy / 10, date_displayed_ticks % 400);
+}
+
 void shift_temp(void) {
     shift(time.hh % 10, time.mm / 10, time.mm % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp_displayed_ticks);
 }
@@ -285,8 +289,12 @@ void handle_display_date(void) {
     } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
     } else if (date_displayed_ticks == TICKS_FREQ) {
-
         set_date_digits(&date);
+    } else if (date_displayed_ticks >= DISPLAY_DATE_DURATION / 2
+            && date_displayed_ticks < DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
+        flip_year();
+    } else if (date_displayed_ticks == DISPLAY_DATE_DURATION / 2 + TICKS_FREQ) {
+        set_year_digits(&date);
     }
     date_displayed_ticks++;
 }
