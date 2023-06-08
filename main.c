@@ -56,6 +56,8 @@
 
 #define SHIFT_EFFECT_FREQ TICKS_FREQ / 5
 
+#define DATAEE_DISPLAY_MODE_ADDR 0x09
+
 #define DATAEE_LED_MODE_ADDR 0x10
 
 #define DATAEE_LED_COLOUR_FIXED_ANGEL_1 0x11
@@ -71,15 +73,22 @@ typedef enum State {
     DISPLAY_TEMP,
     SET_HH,
     SET_MM,
+    SET_12_24,
     SET_DD,
     SET_MONTH,
     SET_YY,
-    SET_12_24,
+    SET_DISPLAY_MODE,
     SET_ALARM_HH,
     SET_ALARM_MM,
     SET_ALARM_ON_OFF,
     SET_ALARM_MELODY
 } State;
+
+typedef enum DisplayMode {
+    TIME_ONLY,
+    TIME_AND_DATE,
+    TIME_DATE_AND_TEMP
+} DisplayMode;
 
 typedef enum LedState {
     LED_OFF,
@@ -89,8 +98,6 @@ typedef enum LedState {
 
 volatile uint8_t timer_ticked = 0;
 volatile uint16_t timer_count = 0;
-
-uint8_t flip_num_arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
 Time time;
 Time updated_time;
@@ -110,6 +117,8 @@ State state = DISPLAY_TIME;
 
 uint16_t date_displayed_ticks;
 uint16_t temp_displayed_ticks;
+
+DisplayMode display_mode;
 
 LedState led_state;
 
@@ -158,6 +167,10 @@ void set_12_24_digits(Time* tm) {
     }
 }
 
+void set_display_mode_digits(uint8_t display_mode) {
+    set_digits(0, display_mode, 0, 0);
+}
+
 void set_alarm_digits(Alarm* alarm) {
     set_digits(alarm->hh / 10, alarm->hh % 10, alarm->mm / 10, alarm->mm % 10);
 }
@@ -166,60 +179,12 @@ void set_alarm_on_off_and_melody_digits(Alarm* alarm, uint8_t alarm_melody) {
     set_digits(0, alarm->on, 0, alarm_melody);
 }
 
-void flip_time(void) {
-    if (timer_count % 10 == 0) {
-        uint8_t i = (timer_count % 100) / 10;
-        set_digits(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
-    }
-}
-
 void flip_date(void) {
-    if (date_displayed_ticks % 10 == 0) {
-        uint8_t dig_num = (uint8_t) (date_displayed_ticks / 100);
-        uint8_t i = (date_displayed_ticks % 100) / 10;
-        switch (dig_num) {
-            case 0:
-                set_digits(flip_num_arr[i], time.hh % 10, time.mm / 10, time.mm % 10);
-                break;
-
-            case 1:
-                set_digits(date.dd / 10, flip_num_arr[i], time.mm / 10, time.mm % 10);
-                break;
-
-            case 2:
-                set_digits(date.dd / 10, date.dd % 10, flip_num_arr[i], time.mm % 10);
-                break;
-
-            case 3:
-                set_digits(date.dd / 10, date.dd % 10, date.MM / 10, flip_num_arr[i]);
-        }
-    }
+    flip_seq(time.hh % 10, time.mm / 10, time.mm % 10, date.dd / 10, date.dd % 10, date.MM / 10, date_displayed_ticks);
 }
 
 void shift_temp(void) {
-    if (temp_displayed_ticks % (SHIFT_EFFECT_FREQ) == 0) {
-        switch (temp_displayed_ticks / (SHIFT_EFFECT_FREQ)) {
-            case 0:
-                set_digits(time.hh % 10, time.mm / 10, time.mm % 10, 0);
-                set_digit_displayed(1, 1, 1, 0);
-                break;
-            case 1:
-                set_digits(time.mm / 10, time.mm % 10, 0, 0);
-                set_digit_displayed(1, 1, 0, 0);
-                break;
-            case 2:
-                set_digits(time.mm % 10, 0, 0, temp.int_part / 10);
-                set_digit_displayed(1, 0, 0, 1);
-                break;
-            case 3:
-                set_digits(0, 0, temp.int_part / 10, temp.int_part % 10);
-                set_digit_displayed(0, 0, 1, 1);
-                break;
-            default:
-                set_digits(0, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10);
-                set_digit_displayed(0, 1, 1, 1);
-        }
-    }
+    shift(time.hh % 10, time.mm / 10, time.mm % 10, temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp_displayed_ticks);
 }
 
 void set_led_state(void) {
@@ -292,18 +257,31 @@ void handle_display_time(void) {
         set_temp_digits(&temp);
         temp_displayed_ticks = 0;
         state = DISPLAY_TEMP;
-    } else if (time.mm % 10 == 0 && time.ss == 30) {
-        flip_time();
-    } else if (timer_count == 0) {
+    } else if (time.mm % 5 == 0 && time.ss == 30) {
+        switch (display_mode) {
+            case TIME_AND_DATE:
+            case TIME_DATE_AND_TEMP:
+                date_displayed_ticks = 0;
+                state = DISPLAY_DATE;
+                break;
+            default:
+                flip_all(timer_count);
+        }
 
+    } else if (timer_count == 0) {
         set_time_digits(&time);
     }
 }
 
 void handle_display_date(void) {
     if (btn1.state == PRESSED || date_displayed_ticks == DISPLAY_DATE_DURATION) {
-        state = DISPLAY_TIME;
-        set_time_digits(&time);
+        if (display_mode == TIME_DATE_AND_TEMP) {
+            state = DISPLAY_TEMP;
+            temp_displayed_ticks = 0;
+        } else {
+            state = DISPLAY_TIME;
+            set_time_digits(&time);
+        }
     } else if (date_displayed_ticks < TICKS_FREQ) {
         flip_date();
     } else if (date_displayed_ticks == TICKS_FREQ) {
@@ -427,8 +405,8 @@ void handle_set_year(void) {
     if (btn2.state == PRESSED) {
         update_date(&updated_date);
         copy_date_fields(&updated_date, &date);
-        set_alarm_digits(&alarm);
-        state = SET_ALARM_HH;
+        state = SET_DISPLAY_MODE;
+        set_display_mode_digits(display_mode);
     } else if (btn1.state == PRESSED
             || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
         decrease_year(&updated_date.yy);
@@ -438,7 +416,29 @@ void handle_set_year(void) {
         increase_year(&updated_date.yy);
         set_year_digits(&updated_date);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
+        toggle_digit_displayed(0);
+        toggle_digit_displayed(1);
+    }
+}
 
+void handle_set_display_mode(void) {
+    if (btn2.state == PRESSED) {
+        DATAEE_WriteByte(DATAEE_DISPLAY_MODE_ADDR, display_mode);
+        state = SET_ALARM_HH;
+        set_alarm_digits(&alarm);
+    } else if (btn1.state == PRESSED) {
+        if (display_mode > 0)
+            display_mode--;
+        else
+            display_mode = TIME_DATE_AND_TEMP;
+        set_display_mode_digits(display_mode);
+    } else if (btn3.state == PRESSED) {
+        if (display_mode < TIME_DATE_AND_TEMP)
+            display_mode++;
+        else
+            display_mode = TIME_ONLY;
+        set_display_mode_digits(display_mode);
+    } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -457,7 +457,6 @@ void handle_set_alarm_hour(void) {
         increase_hour(&alarm.hh, &alarm.pm, time.is_12);
         set_alarm_digits(&alarm);
     } else if (timer_count == 0 || timer_count == TICKS_FREQ / 2) {
-
         toggle_digit_displayed(0);
         toggle_digit_displayed(1);
     }
@@ -547,6 +546,9 @@ void handle_state(void) {
         case SET_MM:
             handle_set_minute();
             break;
+        case SET_12_24:
+            handle_set_12_24();
+            break;
         case SET_DD:
             handle_set_day();
             break;
@@ -556,8 +558,8 @@ void handle_state(void) {
         case SET_YY:
             handle_set_year();
             break;
-        case SET_12_24:
-            handle_set_12_24();
+        case SET_DISPLAY_MODE:
+            handle_set_display_mode();
             break;
         case SET_ALARM_HH:
             handle_set_alarm_hour();
@@ -567,7 +569,6 @@ void handle_state(void) {
             break;
         case SET_ALARM_ON_OFF:
             handle_set_alarm_on_off();
-
             break;
         case SET_ALARM_MELODY:
             handle_set_alarm_melody();
@@ -604,12 +605,19 @@ void main(void) {
 
     set_time_digits(&time);
 
+    display_mode = DATAEE_ReadByte(DATAEE_DISPLAY_MODE_ADDR);
+    if (display_mode > TIME_DATE_AND_TEMP) display_mode = TIME_ONLY;
+
     led_state = DATAEE_ReadByte(DATAEE_LED_MODE_ADDR);
+    if (led_state > LED_FIXED) led_state = 0;
+
     rainbow_angle = (uint16_t) (DATAEE_ReadByte(DATAEE_LED_COLOUR_FIXED_ANGEL_1) << 8
             | DATAEE_ReadByte(DATAEE_LED_COLOUR_FIXED_ANGEL_2));
+
     set_led_state();
 
     alarm_melody = DATAEE_ReadByte(DATAEE_ALARM_MELODY_ADDR);
+    if (alarm_melody > MELODY_COUNT - 1) alarm_melody = 0;
 
     while (1) {
         if (timer_ticked) {
