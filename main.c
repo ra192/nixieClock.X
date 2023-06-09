@@ -342,7 +342,7 @@ void handle_display_year(void) {
 }
 
 void handle_display_temp(void) {
-    if (btn3.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
+    if (btn1.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
         state = DISPLAY_TIME;
         set_time_digits();
         dek_set_mode(dek_mode);
