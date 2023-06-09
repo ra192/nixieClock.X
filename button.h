@@ -13,9 +13,13 @@ extern "C" {
 #endif
 
 #include <xc.h>
-    
-#define BTN_PRESS_COUNT 5
-#define BTN_LONG_PRESS_COUNT 250    
+#include "settings.h"    
+
+#define BTN_PRESS_TIME 0.01
+#define BTN_LONG_PRESS_TIME 0.5    
+
+#define BTN_PRESS_COUNT (TICKS_FREQ * BTN_PRESS_TIME)
+#define BTN_LONG_PRESS_COUNT (TICKS_FREQ * BTN_LONG_PRESS_TIME)    
     
 typedef enum Btn_state {
     RELEASED,
@@ -28,7 +32,7 @@ typedef enum Btn_state {
 
 typedef struct Button {
     Btn_state state;
-    uint8_t pressed_tick_count;
+    uint16_t pressed_tick_count;
 } Button;
 
 void read_button(Button* btn, uint8_t pin_val);

@@ -80,7 +80,7 @@ void off_digits(void) {
 
 void refresh_digits(void) {
     if (effect == TOGGLE) {
-        if (effect_ticks < TICKS_FREQ / 2 - 1)
+        if (effect_ticks < REFRESH_FREQ / 2 - 1)
             effect_ticks++;
         else {
             for (uint8_t i = 0; i < DIGITS_SIZE; i++)
@@ -90,7 +90,7 @@ void refresh_digits(void) {
     }
 
     if (effect == FLIP_ALL) {
-        if (effect_ticks < TICKS_FREQ) {
+        if (effect_ticks < REFRESH_FREQ) {
             if (effect_ticks % 10 == 0) {
                 uint8_t i = (effect_ticks % 100) / 10;
                 DIGITS_TO_VALUES(flip_num_arr[i], flip_num_arr[i], flip_num_arr[i], flip_num_arr[i]);
@@ -103,7 +103,7 @@ void refresh_digits(void) {
     }
 
     if (effect == FLIP_SEQ) {
-        if (effect_ticks < TICKS_FREQ) {
+        if (effect_ticks < REFRESH_FREQ) {
             if (effect_ticks % 10 == 0) {
                 uint8_t dig_num = (uint8_t) (effect_ticks / 100);
                 uint8_t i = (effect_ticks % 100) / 10;
@@ -132,7 +132,7 @@ void refresh_digits(void) {
     }
 
     if (effect == SHIFT) {
-        if (effect_ticks < TICKS_FREQ) {
+        if (effect_ticks < REFRESH_FREQ) {
             if (effect_ticks % 80 == 0) {
                 switch (effect_ticks / 80) {
                     case 0:

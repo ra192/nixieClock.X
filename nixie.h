@@ -14,7 +14,8 @@
 extern "C" {
 #endif
 
-#define DIGITS_SIZE 4       
+#define DIGITS_SIZE 4
+#define REFRESH_FREQ 400    
     
     void set_digits(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3);
 

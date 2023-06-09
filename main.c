@@ -50,19 +50,21 @@
 #include "dekatron.h"
 #include "buzzer.h"
 
+#define REFRESH_PRESCALER (TICKS_FREQ / REFRESH_FREQ)
+
 #define DISPLAY_DATE_DURATION 5 * TICKS_FREQ
 #define DISPLAY_TEMP_DURATION 5 * TICKS_FREQ
 
-#define SHIFT_EFFECT_FREQ TICKS_FREQ / 5
+#define DATAEE_DISPLAY_MODE_ADDR 0x08
 
-#define DATAEE_DISPLAY_MODE_ADDR 0x09
+#define DATAEE_DEK_MODE_ADDR 0x09
 
 #define DATAEE_LED_MODE_ADDR 0x10
 
 #define DATAEE_LED_COLOUR_FIXED_ANGEL_1 0x11
 #define DATAEE_LED_COLOUR_FIXED_ANGEL_2 0x12
 
-#define LED_RAINBOW_FREQ TICKS_FREQ / 50
+#define LED_RAINBOW_PRESC (TICKS_FREQ / 50)
 
 #define DATAEE_ALARM_MELODY_ADDR 0x14
 
@@ -212,6 +214,25 @@ void shift_temp(void) {
     shift(temp.int_part / 10, temp.int_part % 10, temp.fract_part / 10, temp.fract_part % 10);
 }
 
+void change_dek_mode(void) {
+    switch(dek_mode) {
+        case DISPLAY_VAL:
+            dek_mode = DISPLAY_WITH_SPIN_CW;
+            break;
+        case DISPLAY_WITH_SPIN_CW:
+            dek_mode = DISPLAY_WITH_SPIN_CCW;
+            break;
+        case DISPLAY_WITH_SPIN_CCW:
+            dek_mode = FILL;
+            break;
+        default:
+            dek_mode = DISPLAY_VAL;
+    }
+    
+    dek_set_mode(dek_mode);
+    DATAEE_WriteByte(DATAEE_DEK_MODE_ADDR, dek_mode);
+}
+
 void set_led_state(void) {
     switch (led_state) {
         case LED_RAINBOW:
@@ -245,10 +266,8 @@ void change_led_state(void) {
 }
 
 void change_rainbow_colour(void) {
-    if (timer_count % (LED_RAINBOW_FREQ) == 0) {
-        rainbow_angle = (rainbow_angle + 1) % 360;
-        set_leds_colour_by_angle(rainbow_angle);
-    }
+    rainbow_angle = (rainbow_angle + 1) % 360;
+    set_leds_colour_by_angle(rainbow_angle);
 }
 
 void handle_display_time(void) {
@@ -265,11 +284,7 @@ void handle_display_time(void) {
         set_hh_digits();
         state = SET_HH;
     } else if (btn3.state == PRESSED) {
-        read_temp(&temp);
-        shift_temp();
-        displayed_ticks = 0;
-        state = DISPLAY_TEMP;
-        dek_set_mode(SPIN_CCW);
+        change_dek_mode();
     } else if (time.mm % 5 == 0 && time.ss == 0) {
         switch (display_mode) {
             case TIME_AND_DATE:
@@ -290,9 +305,11 @@ void handle_display_time(void) {
 
 void handle_display_date(void) {
     if (btn1.state == PRESSED) {
-        state = DISPLAY_TIME;
-        set_time_digits();
-        dek_set_mode(dek_mode);
+        read_temp(&temp);
+        shift_temp();
+        displayed_ticks = 0;
+        state = DISPLAY_TEMP;
+        dek_set_mode(SPIN_CCW);
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_YEAR;
         flip_year();
@@ -303,12 +320,17 @@ void handle_display_date(void) {
 
 void handle_display_year(void) {
     if (btn1.state == PRESSED) {
-        state = DISPLAY_TIME;
-        set_time_digits();
-        dek_set_mode(dek_mode);
+        read_temp(&temp);
+        shift_temp();
+        displayed_ticks = 0;
+        state = DISPLAY_TEMP;
+        dek_set_mode(SPIN_CCW);
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         if (display_mode == TIME_DATE_AND_TEMP) {
+            read_temp(&temp);
             shift_temp();
+            displayed_ticks = 0;
+            state = DISPLAY_TEMP;
             dek_set_mode(SPIN_CCW);
         } else {
             state = DISPLAY_TIME;
@@ -588,6 +610,11 @@ void main(void) {
 
     set_time_digits();
 
+    dek_mode = DATAEE_ReadByte(DATAEE_DEK_MODE_ADDR);
+    if(dek_mode > 5) dek_mode = DISPLAY_VAL;
+    dek_set_mode(dek_mode);
+    dek_set_val(time.ss % 30);
+
     display_mode = DATAEE_ReadByte(DATAEE_DISPLAY_MODE_ADDR);
     if (display_mode > TIME_DATE_AND_TEMP) display_mode = TIME_ONLY;
 
@@ -602,12 +629,9 @@ void main(void) {
     alarm_melody = DATAEE_ReadByte(DATAEE_ALARM_MELODY_ADDR);
     if (alarm_melody > MELODY_COUNT - 1) alarm_melody = 0;
 
-    dek_mode = DISPLAY_VAL;
-    dek_set_mode(dek_mode);
-    
     while (1) {
         if (timer_ticked) {
-            refresh_digits();
+            if (timer_count % REFRESH_PRESCALER == 0) refresh_digits();
             refresh_dek();
             read_buttons();
             handle_state();
@@ -615,9 +639,9 @@ void main(void) {
                 read_time(&time);
             }
             if (((time.hh == 0 && !time.is_12) || (time.hh == 12 && !time.pm && time.is_12))
-                    && time.mm == 0 && time.ss == 0)
+                    && time.mm == 0 && time.ss == 0 && timer_count == 0)
                 update_date(&date);
-            if (led_state == LED_RAINBOW) change_rainbow_colour();
+            if (led_state == LED_RAINBOW && timer_count % LED_RAINBOW_PRESC == 0) change_rainbow_colour();
             handle_alarm();
             timer_ticked = 0;
         }

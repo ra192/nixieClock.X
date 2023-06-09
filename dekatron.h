@@ -13,21 +13,28 @@ extern "C" {
 #endif
 
 #include <xc.h>
+#include "settings.h"
+    
+#define CATHODES_COUNT 30
+
+#define SPIN_PRESC (TICKS_FREQ / 50)
 
     typedef enum DekMode {
         DISPLAY_VAL,
         SPIN_CW,
         SPIN_CCW,
-        FILL        
+        DISPLAY_WITH_SPIN_CW,
+        DISPLAY_WITH_SPIN_CCW,
+        FILL
     } DekMode;
 
     void dek_set_val(uint8_t disp_val);
-    
+
     void dek_set_mode(DekMode mod);
 
     void refresh_dek(void);
-    
-    
+
+
 
 #ifdef	__cplusplus
 }
