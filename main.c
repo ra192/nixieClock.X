@@ -520,13 +520,12 @@ void handle_set_alarm_melody(void) {
 }
 
 void handle_alarm(void) {
-        if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
-                && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
-            start_melody(alarm_melody);
-        } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
-            buzzer_off();
-        } else
-            if (buzzer_get_on()) refresh_buzzer();
+    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
+            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
+        start_melody(alarm_melody);
+    } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
+        buzzer_off();
+    } else if (buzzer_get_on()) refresh_buzzer();
 }
 
 void handle_state(void) {

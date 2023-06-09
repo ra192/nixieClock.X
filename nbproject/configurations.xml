@@ -63,7 +63,6 @@
       <itemPath>Makefile</itemPath>
       <itemPath>nixie.mc3</itemPath>
     </logicalFolder>
-    <itemPath>melodies.txt</itemPath>
   </logicalFolder>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
