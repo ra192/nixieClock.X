@@ -14,7 +14,7 @@ extern "C" {
 
 #include <xc.h>
 
-#define MELODY_COUNT 2
+#define MELODY_COUNT 4
     
     void buzzer_off(void);
 

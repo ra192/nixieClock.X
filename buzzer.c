@@ -31,14 +31,14 @@
 
 #define REST 0x00
 
-#define NOTE_LENGTH_1_16 40
-#define NOTE_LENGTH_1_16_D 60
-#define NOTE_LENGTH_1_8 80
-#define NOTE_LENGTH_1_8_D 120
-#define NOTE_LENGTH_1_4 160
-#define NOTE_LENGTH_1_4_D 240
-#define NOTE_LENGTH_1_2 320
-#define NOTE_LENGTH_1 640
+#define NOTE_LENGTH_1_16 80
+#define NOTE_LENGTH_1_16_D 120
+#define NOTE_LENGTH_1_8 160
+#define NOTE_LENGTH_1_8_D 240
+#define NOTE_LENGTH_1_4 320
+#define NOTE_LENGTH_1_4_D 480
+#define NOTE_LENGTH_1_2 640
+#define NOTE_LENGTH_1 1280
 
 #define PWM_DUTY_VAL 213
 
@@ -91,6 +91,7 @@ const Note melody_0[] = {
 uint8_t melody_0_size = 32;
 
 const Note melody_1[] = {
+    // Imperial march https://github.com/robsoncouto/arduino-songs/blob/master/imperialmarch/imperialmarch.ino
     {NOTE_A6, NOTE_LENGTH_1_4},
     {NOTE_A6, NOTE_LENGTH_1_4},
     {NOTE_A6, NOTE_LENGTH_1_4},
@@ -111,6 +112,50 @@ const Note melody_1[] = {
     {NOTE_A6, NOTE_LENGTH_1_2},
 };
 uint8_t melody_1_size = 18;
+
+const Note melody_2[] = {
+    // Nokia ringtone https://github.com/robsoncouto/arduino-songs/blob/master/nokia/nokia.ino
+    {NOTE_E7, NOTE_LENGTH_1_8},
+    {NOTE_D7, NOTE_LENGTH_1_8},
+    {NOTE_FS6, NOTE_LENGTH_1_4},
+    {NOTE_GS6, NOTE_LENGTH_1_4},
+    {NOTE_CS7, NOTE_LENGTH_1_8},
+    {NOTE_B6, NOTE_LENGTH_1_8},
+    {NOTE_D6, NOTE_LENGTH_1_4},
+    {NOTE_E6, NOTE_LENGTH_1_4},
+    {NOTE_B6, NOTE_LENGTH_1_8},
+    {NOTE_A6, NOTE_LENGTH_1_8},
+    {NOTE_CS6, NOTE_LENGTH_1_4},
+    {NOTE_E6, NOTE_LENGTH_1_4},
+    {NOTE_A6, NOTE_LENGTH_1_2}
+};
+uint8_t melody_2_size = 13;
+
+const Note melody_3[] = {
+    // Fur Elise https://github.com/robsoncouto/arduino-songs/blob/master/furelise/furelise.ino
+    {NOTE_E7, NOTE_LENGTH_1_16},
+    {NOTE_DS7, NOTE_LENGTH_1_16}, //1
+    {NOTE_E7, NOTE_LENGTH_1_16},
+    {NOTE_DS7, NOTE_LENGTH_1_16},
+    {NOTE_E7, NOTE_LENGTH_1_16},
+    {NOTE_B6, NOTE_LENGTH_1_16},
+    {NOTE_D7, NOTE_LENGTH_1_16},
+    {NOTE_C7, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_8_D},
+    {NOTE_C6, NOTE_LENGTH_1_16},
+    {NOTE_E6, NOTE_LENGTH_1_16},
+    {NOTE_A6, NOTE_LENGTH_1_16},
+    {NOTE_B6, NOTE_LENGTH_1_8_D},
+    {NOTE_E6, NOTE_LENGTH_1_16},
+    {NOTE_GS6, NOTE_LENGTH_1_16},
+    {NOTE_B6, NOTE_LENGTH_1_16},
+    {NOTE_C7, NOTE_LENGTH_1_8},
+    {REST, NOTE_LENGTH_1_16},
+    {NOTE_E6, NOTE_LENGTH_1_16},
+    {NOTE_E7, NOTE_LENGTH_1_16},
+    {NOTE_DS7, NOTE_LENGTH_1_16}
+};
+uint8_t melody_3_size = 13;
 
 const Note* current_melody;
 uint8_t current_melody_size;
