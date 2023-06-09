@@ -215,7 +215,7 @@ void shift_temp(void) {
 }
 
 void change_dek_mode(void) {
-    switch(dek_mode) {
+    switch (dek_mode) {
         case DISPLAY_VAL:
             dek_mode = DISPLAY_WITH_SPIN_CW;
             break;
@@ -228,7 +228,7 @@ void change_dek_mode(void) {
         default:
             dek_mode = DISPLAY_VAL;
     }
-    
+
     dek_set_mode(dek_mode);
     DATAEE_WriteByte(DATAEE_DEK_MODE_ADDR, dek_mode);
 }
@@ -520,15 +520,13 @@ void handle_set_alarm_melody(void) {
 }
 
 void handle_alarm(void) {
-    if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
-            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
-        start_melody(alarm_melody);
-    } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
-        buzzer_off();
-    } else
-
-        if (buzzer_get_on())
-        refresh_buzzer();
+        if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
+                && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
+            start_melody(alarm_melody);
+        } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
+            buzzer_off();
+        } else
+            if (buzzer_get_on()) refresh_buzzer();
 }
 
 void handle_state(void) {
@@ -611,7 +609,7 @@ void main(void) {
     set_time_digits();
 
     dek_mode = DATAEE_ReadByte(DATAEE_DEK_MODE_ADDR);
-    if(dek_mode > 5) dek_mode = DISPLAY_VAL;
+    if (dek_mode > 5) dek_mode = DISPLAY_VAL;
     dek_set_mode(dek_mode);
     dek_set_val(time.ss % 30);
 

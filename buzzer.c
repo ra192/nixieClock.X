@@ -155,7 +155,7 @@ const Note melody_3[] = {
     {NOTE_E7, NOTE_LENGTH_1_16},
     {NOTE_DS7, NOTE_LENGTH_1_16}
 };
-uint8_t melody_3_size = 13;
+uint8_t melody_3_size = 21;
 
 const Note* current_melody;
 uint8_t current_melody_size;
