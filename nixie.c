@@ -2,6 +2,8 @@
 #include "settings.h"
 
 #define DIGITS_TO_VALUES(dig0, dig1, dig2, dig3) copy_digits(dig0, dig1, dig2, dig3, digit_values);
+#define DIGITS_TO_SAVED_VALUES(dig0, dig1, dig2, dig3) copy_digits(dig0, dig1, dig2, dig3, saved_digit_values);
+
 #define DISPLAY_ALL() copy_digits(1, 1, 1, 1, digit_displayed)
 #define SET_DISPLAYED(disp0, disp1,disp2,disp3) copy_digits(disp0, disp1, disp2, disp3, digit_displayed)
 
@@ -184,25 +186,23 @@ void toggle(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3, uint8_t dig0
 
 void flip_all(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
     effect = FLIP_ALL;
-    copy_digits(dig0, dig1, dig2, dig3, saved_digit_values);
+    DIGITS_TO_SAVED_VALUES(dig0, dig1, dig2, dig3);
     effect_ticks = 0;
     DISPLAY_ALL();
-    ;
 }
 
 void flip_seq(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
     effect = FLIP_SEQ;
     copy_arr(digit_values, prev_digit_values, DIGITS_SIZE);
-    copy_digits(dig0, dig1, dig2, dig3, saved_digit_values);
+    DIGITS_TO_SAVED_VALUES(dig0, dig1, dig2, dig3);
     effect_ticks = 0;
     DISPLAY_ALL();
-    ;
 }
 
 void shift(uint8_t dig0, uint8_t dig1, uint8_t dig2, uint8_t dig3) {
     effect = SHIFT;
     copy_arr(digit_values, prev_digit_values, DIGITS_SIZE);
-    copy_digits(dig0, dig1, dig2, dig3, saved_digit_values);
+    DIGITS_TO_SAVED_VALUES(dig0, dig1, dig2, dig3);
     effect_ticks = 0;
     DISPLAY_ALL();
 }
