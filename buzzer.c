@@ -184,13 +184,21 @@ uint8_t buzzer_get_on(void) {
 
 void start_melody(uint8_t melody_index) {
     switch (melody_index) {
-        case 0:
-            current_melody = melody_0;
-            current_melody_size = melody_0_size;
-            break;
-        default:
+        case 1:
             current_melody = melody_1;
             current_melody_size = melody_1_size;
+            break;
+        case 2:
+            current_melody = melody_2;
+            current_melody_size = melody_2_size;
+            break;
+        case 3:
+            current_melody = melody_3;
+            current_melody_size = melody_3_size;
+            break;
+        default:
+            current_melody = melody_0;
+            current_melody_size = melody_0_size;
     }
 
     buzzer_on(current_melody[0].note, current_melody[0].length);
