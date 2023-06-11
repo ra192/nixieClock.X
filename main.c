@@ -67,6 +67,7 @@
 #define LED_RAINBOW_PRESC (TICKS_FREQ / 50)
 
 #define DATAEE_ALARM_MELODY_ADDR 0x14
+#define ALARM_PRESC 4
 
 typedef enum State {
     DISPLAY_TIME,
@@ -333,7 +334,7 @@ void display_time(void) {
 }
 
 void handle_display_date(void) {
-    if (btn1.state == PRESSED) {
+    if (btn3.state == PRESSED) {
         display_temp();
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_YEAR;
@@ -344,7 +345,7 @@ void handle_display_date(void) {
 }
 
 void handle_display_year(void) {
-    if (btn1.state == PRESSED) {
+    if (btn3.state == PRESSED) {
         display_temp();
     } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         if (display_mode == TIME_DATE_AND_TEMP) {
@@ -698,7 +699,7 @@ void main(void) {
                     && time.mm == 0 && time.ss == 0 && timer_count == 0)
                 update_date(&date);
             if (led_state == LED_RAINBOW && timer_count % LED_RAINBOW_PRESC == 0) change_rainbow_colour();
-            handle_alarm();
+            if(timer_count % ALARM_PRESC == 0) handle_alarm();
             timer_ticked = 0;
         }
     }

@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-#define TICKS_FREQ 800
+#define TICKS_FREQ 1600
 
 
 #ifdef	__cplusplus
