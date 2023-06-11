@@ -295,19 +295,19 @@ void change_rainbow_colour(void) {
 
 void handle_display_time(void) {
     if (btn1.state == PRESSED) {
-        displayed_ticks = 0;
-        state = DISPLAY_DATE;
-        flip_date();
-        dek_set_mode(SPIN_CW);
-    } else if (btn2.state == PRESSED) {
         change_led_state();
+    } else if (btn2.state == PRESSED) {
+        change_dek_mode();
     } else if (btn2.state == LONG_PRESSED) {
         copy_time_fields(&time, &updated_time);
         copy_date_fields(&date, &updated_date);
         set_hh_digits();
         state = SET_HH;
     } else if (btn3.state == PRESSED) {
-        change_dek_mode();
+        displayed_ticks = 0;
+        state = DISPLAY_DATE;
+        flip_date();
+        dek_set_mode(SPIN_CW);
     } else if (time.mm % 5 == 0 && time.ss == 0) {
         switch (display_mode) {
             case TIME_AND_DATE:
