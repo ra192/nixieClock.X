@@ -52,6 +52,8 @@
 
 #define REFRESH_PRESCALER (TICKS_FREQ / REFRESH_FREQ)
 
+#define SET_HOLDING_PRESCALER (TICKS_FREQ / 20)
+
 #define DISPLAY_DATE_DURATION 5 * TICKS_FREQ
 #define DISPLAY_TEMP_DURATION 5 * TICKS_FREQ
 
@@ -378,11 +380,11 @@ void handle_set_hour(void) {
         state = SET_MM;
         set_mm_digits();
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
         set_hh_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_hour(&updated_time.hh, &updated_time.pm, updated_time.is_12);
         set_hh_digits();
     }
@@ -393,11 +395,11 @@ void handle_set_minute(void) {
         state = SET_12_24;
         set_12_24_digits();
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_minute(&updated_time.mm);
         set_mm_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_minute(&updated_time.mm);
         set_mm_digits();
     }
@@ -439,11 +441,11 @@ void handle_set_day(void) {
         state = SET_MONTH;
         set_MM_digits();
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_date(&updated_date.dd, updated_date.MM);
         set_dd_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_date(&updated_date.dd, updated_date.dd);
         set_dd_digits();
     }
@@ -454,11 +456,11 @@ void handle_set_month(void) {
         set_yy_digits();
         state = SET_YY;
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_month(&updated_date.MM);
         set_MM_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_month(&updated_date.MM);
         set_MM_digits();
     }
@@ -471,11 +473,11 @@ void handle_set_year(void) {
         state = SET_DISPLAY_MODE;
         set_display_mode_digits();
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_year(&updated_date.yy);
         set_yy_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_year(&updated_date.yy);
         set_yy_digits();
     }
@@ -506,11 +508,11 @@ void handle_set_alarm_hour(void) {
         state = SET_ALARM_MM;
         set_alarm_mm_digits();
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_hour(&alarm.hh, &alarm.pm, time.is_12);
         set_alarm_hh_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_hour(&alarm.hh, &alarm.pm, time.is_12);
         set_alarm_hh_digits();
     }
@@ -526,11 +528,11 @@ void handle_set_alarm_minute(void) {
             set_alarm_on_off_digits();
         }
     } else if (btn1.state == PRESSED
-            || (btn1.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn1.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         decrease_minute(&alarm.mm);
         set_alarm_mm_digits();
     } else if (btn3.state == PRESSED
-            || (btn3.state == HOLD_LONG_PRESSED && timer_count % 10 == 0)) {
+            || (btn3.state == HOLD_LONG_PRESSED && timer_count % SET_HOLDING_PRESCALER == 0)) {
         increase_minute(&alarm.mm);
         set_alarm_mm_digits();
     }
