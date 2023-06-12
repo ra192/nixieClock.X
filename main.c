@@ -576,7 +576,7 @@ void handle_set_alarm_melody(void) {
 
 void handle_alarm(void) {
     if (alarm.on && time.hh == alarm.hh && (time.is_12 == 0 || time.pm == alarm.pm)
-            && time.mm == alarm.mm && time.ss == alarm.ss && timer_count == 0) {
+            && time.mm == alarm.mm && time.ss == 0 && !buzzer_get_on()) {
         start_melody(alarm_melody);
     } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
         buzzer_off();
@@ -694,14 +694,14 @@ void main(void) {
             refresh_dek();
             read_buttons();
             handle_state();
+            handle_alarm();
             if (timer_count == 0) {
                 read_time(&time);
+                if (((time.hh == 0 && !time.is_12) || (time.hh == 12 && !time.pm && time.is_12))
+                        && time.mm == 0 && time.ss == 0)
+                    update_date(&date);
             }
-            if (((time.hh == 0 && !time.is_12) || (time.hh == 12 && !time.pm && time.is_12))
-                    && time.mm == 0 && time.ss == 0 && timer_count == 0)
-                update_date(&date);
             if (led_state == LED_RAINBOW && timer_count % LED_RAINBOW_PRESC == 0) change_rainbow_colour();
-            handle_alarm();
             timer_ticked = 0;
         }
     }
