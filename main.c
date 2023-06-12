@@ -67,7 +67,7 @@
 #define LED_RAINBOW_PRESC (TICKS_FREQ / 50)
 
 #define DATAEE_ALARM_MELODY_ADDR 0x14
-#define ALARM_PRESC 4
+#define REFRESH_ALARM_PRESC 4
 
 typedef enum State {
     DISPLAY_TIME,
@@ -177,14 +177,14 @@ void set_yy_digits(void) {
 
 void set_12_24_digits(void) {
     if (updated_time.is_12) {
-        toggle(1, 2, 0, 0, 1, 1, 0, 0);
+        toggle(1, 2, 0, updated_time.pm, 1, 1, 0, 0);
     } else {
         toggle(2, 4, 0, 0, 1, 1, 0, 0);
     }
 }
 
 void set_am_pm_digits(void) {
-    toggle(0, updated_time.pm, 0, 0, 1, 1, 0, 0);
+    toggle(1, 2, 0, updated_time.pm, 0, 0, 1, 1);
 }
 
 void set_display_mode_digits(void) {
@@ -200,7 +200,7 @@ void set_alarm_mm_digits(void) {
 }
 
 void set_alarm_am_pm_digits(void) {
-    toggle(0, alarm.pm, 0, 0, 1, 1, 0, 0);
+    toggle(1, 2, 0, alarm.pm, 0, 0, 1, 1);
 }
 
 void set_alarm_on_off_digits(void) {
@@ -247,7 +247,7 @@ void change_dek_mode(void) {
             dek_mode = DISPLAY_WITH_SPIN_CCW;
             break;
         case DISPLAY_WITH_SPIN_CCW:
-            dek_mode = FILL;
+            dek_mode = RING;
             break;
         default:
             dek_mode = DISPLAY_VAL;
@@ -323,7 +323,7 @@ void handle_display_time(void) {
         }
     } else if (timer_count == 0) {
         set_time_digits();
-        dek_set_val(time.ss % 30);
+        dek_set_val(time.ss);
     }
 }
 
@@ -366,7 +366,7 @@ void display_temp(void) {
 }
 
 void handle_display_temp(void) {
-    if (btn1.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
+    if (btn3.state == PRESSED || displayed_ticks == DISPLAY_TEMP_DURATION) {
         display_time();
     }
     displayed_ticks++;
@@ -428,7 +428,7 @@ void handle_set_am_pm() {
     if (btn2.state == PRESSED) {
         save_time();
     } else if (btn1.state == PRESSED || btn3.state == PRESSED) {
-        updated_time.is_12 ^= 1;
+        updated_time.pm ^= 1;
         set_am_pm_digits();
     }
 }
@@ -519,6 +519,7 @@ void handle_set_alarm_minute(void) {
     if (btn2.state == PRESSED) {
         if (time.is_12) {
             state = SET_ALARM_AM_PM;
+            set_alarm_am_pm_digits();
         } else {
             state = SET_ALARM_ON_OFF;
             set_alarm_on_off_digits();
@@ -579,7 +580,8 @@ void handle_alarm(void) {
         start_melody(alarm_melody);
     } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
         buzzer_off();
-    } else if (buzzer_get_on()) refresh_buzzer();
+    } else if (buzzer_get_on() && timer_count % REFRESH_ALARM_PRESC == 0)
+        refresh_buzzer();
 }
 
 void handle_state(void) {
@@ -699,7 +701,7 @@ void main(void) {
                     && time.mm == 0 && time.ss == 0 && timer_count == 0)
                 update_date(&date);
             if (led_state == LED_RAINBOW && timer_count % LED_RAINBOW_PRESC == 0) change_rainbow_colour();
-            if(timer_count % ALARM_PRESC == 0) handle_alarm();
+            handle_alarm();
             timer_ticked = 0;
         }
     }

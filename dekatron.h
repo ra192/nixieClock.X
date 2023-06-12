@@ -17,7 +17,7 @@ extern "C" {
     
 #define CATHODES_COUNT 30
 
-#define SPIN_PRESC (TICKS_FREQ / 25)
+#define SPIN_PRESC (TICKS_FREQ / 50)
 
     typedef enum DekMode {
         DISPLAY_VAL,
@@ -25,12 +25,12 @@ extern "C" {
         SPIN_CCW,
         DISPLAY_WITH_SPIN_CW,
         DISPLAY_WITH_SPIN_CCW,
-        FILL
+        RING
     } DekMode;
 
-    void dek_set_val(uint8_t disp_val);
-
     void dek_set_mode(DekMode mod);
+    
+    void dek_set_val(uint8_t disp_val);
 
     void refresh_dek(void);
 

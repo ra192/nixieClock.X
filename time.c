@@ -31,7 +31,7 @@ void read_time(Time* time) {
     time->is_12 = reg_arr[2] >> 6;
 
     if (time->is_12) {
-        time->pm = reg_arr[2] >> 5;
+        time->pm = reg_arr[2] >> 5 & 0x01;
         time->hh = (reg_arr[2] >> 4 & 0x01) * 10 + (reg_arr[2] & 0x0F);
     } else {
         time->hh = (reg_arr[2] >> 4 & 0x03) * 10 + (reg_arr[2] & 0x0F);
