@@ -14,6 +14,7 @@ extern "C" {
 
 #include <xc.h>
 
+#define BUZZER_REFRESH_FREQ 400
 #define MELODY_COUNT 4
     
     void buzzer_off(void);

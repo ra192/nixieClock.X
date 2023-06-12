@@ -67,7 +67,8 @@
 #define LED_RAINBOW_PRESC (TICKS_FREQ / 50)
 
 #define DATAEE_ALARM_MELODY_ADDR 0x14
-#define REFRESH_ALARM_PRESC 4
+
+#define BUZZER_REFRESH_PRESCALER (TICKS_FREQ / BUZZER_REFRESH_FREQ)
 
 typedef enum State {
     DISPLAY_TIME,
@@ -580,7 +581,7 @@ void handle_alarm(void) {
         start_melody(alarm_melody);
     } else if (buzzer_get_on() && (btn1.state == PRESSED || btn2.state == PRESSED || btn3.state == PRESSED)) {
         buzzer_off();
-    } else if (buzzer_get_on() && timer_count % REFRESH_ALARM_PRESC == 0)
+    } else if (buzzer_get_on() && timer_count % BUZZER_REFRESH_PRESCALER == 0)
         refresh_buzzer();
 }
 
