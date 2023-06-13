@@ -89,8 +89,6 @@ void dek_set_val(uint8_t disp_val) {
     }
 }
 
-
-
 void move(uint8_t dir) {
     if (direction)
         move_prev();
@@ -135,16 +133,17 @@ void refresh_dek(void) {
                 }
             } else {
                 uint8_t cat_val = val % CATHODES_COUNT;
-                if (cat_num > cat_val || cat_num == 0) {
-                    move_prev();
-                } else {
+
+                if ((cat_num > cat_val + 1) || (cat_num == 0 && cat_val != CATHODES_COUNT - 1)) {
+                        move_prev();
+                    } else {
                     cat_num = 0;
-                    change_cat();
+                            change_cat();
                 }
             }
             break;
         default:
             if (cat_num != val)
-                move_next();
-    }
+                    move_next();
+            }
 }
