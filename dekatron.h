@@ -17,7 +17,7 @@ extern "C" {
     
 #define CATHODES_COUNT 30
 
-#define SPIN_PRESC (TICKS_FREQ / 50)
+#define SPIN_PRESC (TICKS_FREQ / 100)
 
     typedef enum DekMode {
         DISPLAY_VAL,

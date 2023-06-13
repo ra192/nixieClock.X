@@ -338,11 +338,11 @@ void display_time(void) {
 
 void handle_display_date(void) {
     if (btn3.state == PRESSED) {
-        display_temp();
-    } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
         state = DISPLAY_YEAR;
         flip_year();
         displayed_ticks = 0;
+    } else if (displayed_ticks == DISPLAY_DATE_DURATION) {
+        display_temp();
     }
     displayed_ticks++;
 }
